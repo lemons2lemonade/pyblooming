@@ -6,7 +6,7 @@ import mmap
 import os.path
 
 class Bitmap(object):
-    def __init__(self, length, anonymous=True, filename=None):
+    def __init__(self, length, filename=None):
         """
         Creates a new Bitmap object. Bitmap wraps a memory mapped
         file and allows bit-level operations to be performed.
@@ -14,19 +14,16 @@ class Bitmap(object):
 
         :Parameters:
             length : The length of the Bitmap in bytes. The number of bits is 8 times this.
-            anonymous (optional) : Defaults to True, if True there is no file backing store.
-            filename (optional*) : Defaults to None. This must be provided if anonymous is False.
+            filename (optional) : Defaults to None. If this is provided, the Bitmap will be file backed.
         """
-        # Save if this is an anonymous mmap
-        self.anonymous = anonymous
+        # Save if  the size
         self.size = length
 
         # Create the fileobj and mmap
-        if anonymous:
+        if not filename:
             self.fileobj = None
             self.mmap = mmap.mmap(-1, length)
         else:
-            if not filename: raise ValueError, "Must provide filename if anonymous is false!"
             self.fileobj = open(filename, "a+")
 
             # Write 0's to the file
@@ -73,7 +70,7 @@ class Bitmap(object):
 
     def flush(self):
         "Flushes the contents of the Bitmap to disk."
-        if not self.anonymous: self.mmap.flush()
+        self.mmap.flush()
         if self.fileobj: self.fileobj.flush()
 
     def close(self):
