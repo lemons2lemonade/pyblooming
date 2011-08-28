@@ -108,3 +108,11 @@ class Bitmap(object):
             bitmap.mmap[i] = chr(ord(self.mmap[i]) & ord(bitmap.mmap[i]))
         return bitmap
 
+    def __getslice__(self, i, j):
+        "Allow direct access to the mmap, indexed by byte"
+        return self.mmap[i:j]
+
+    def __setslice__(self, i, j, val):
+        "Allow direct access to the mmap, indexed by byte"
+        self.mmap[i:j] = val
+
