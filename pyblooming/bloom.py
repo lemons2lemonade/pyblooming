@@ -63,6 +63,14 @@ class BloomFilter(object):
         """
         return math.e ** (-(float(bits)/float(capacity))*(math.log(2)**2))
 
+    @classmethod
+    def expected_capacity(cls, bits, prob):
+        """
+        Returns the expected capacity given a number
+        of bits and an enforced probability
+        """
+        return -bits/math.log(prob)*(math.log(2)**2)
+
     def _get_hashes(self, key, k):
         "Generates a specified number of hashes for a key"
         hashes = []
