@@ -3,9 +3,16 @@ Implements an easy to use Bloom filter on top of
 the bitmap implementation.
 """
 import math
+import struct
 import bitmap as bitmaplib
 
 class BloomFilter(object):
+    # This is the packing format we use to store the count
+    SIZE_FMT = "<Q"
+
+    # This is how many bytes we need to store the count
+    SIZE_LEN = 8
+
     def __init__(self, bitmap=None, length=16777216, k=4):
         """
         Creates a new Bloom Filter instance. A bloom filter
@@ -28,10 +35,11 @@ class BloomFilter(object):
                 saving in reducing this.
         """
         if k < 1 or k > 4: raise ValueError, "Bad value provided for k!"
-        if not bitmap: bitmap = bitmaplib.Bitmap(length)
+        if not bitmap: bitmap = bitmaplib.Bitmap(length+self.SIZE_LEN)
         self.bitmap = bitmap
-        self.bitmap_size = len(bitmap)
+        self.bitmap_size = len(bitmap) - 8*self.SIZE_LEN # Ignore our size
         self.k_num = k
+        self.count = self._read_count() # Read the count from the file
 
     @classmethod
     def required_bits(cls, capacity, prob):
@@ -74,34 +82,73 @@ class BloomFilter(object):
 
         return (djb_hash, dek_hash, fnv_hash, js_hash)
 
-    def add(self, key):
+    def add(self, key, check_first=False):
         "Add a key to the set"
         if not isinstance(key, str): raise ValueError, "Key must be a string!"
         hashes = self._hash(key)[:self.k_num]
         m = self.bitmap_size
+
+        # Set the bits for the hashes
         for h in hashes:
+            if check_first and self.bitmap[h % m] == 0: return False
             self.bitmap[h % m] = 1
+        self.count += 1
+
+        return True
 
     def __contains__(self, key):
         "Checks if the set contains a given key"
         if not isinstance(key, str): raise ValueError, "Key must be a string!"
         hashes = self._hash(key)[:self.k_num]
         m = self.bitmap_size
-        return all(self.bitmap[h % m] for h in hashes)
+        for h in hashes:
+            if self.bitmap[h % m] == 0: return False
+        return True
 
     def __or__(self, bloom):
         "Implements a set union"
         if not isinstance(bloom, BloomFilter): raise ValueError, "Cannot perform union with non-BloomFilter!"
         bitmap = self.bitmap | bloom.bitmap
-        return BloomFilter(bitmap=bitmap,k=self.k_num)
+        new = BloomFilter(bitmap=bitmap,k=self.k_num)
+        new.count = self.count + bloom.count # Sum the counts, as an approximation
+        new.flush(size_only=True) # Resave the size, otherwise it is garbage
+        return new
 
     def __and__(self, bloom):
         "Implements a set intersection"
         if not isinstance(bloom, BloomFilter): raise ValueError, "Cannot perform intersection with non-BloomFilter!"
         bitmap = self.bitmap & bloom.bitmap
-        return BloomFilter(bitmap=bitmap,k=self.k_num)
+        new = BloomFilter(bitmap=bitmap,k=self.k_num)
+        new.count = min(self.count, bloom.count) # Use the minimum count, as an approximation
+        new.flush(size_only=True) # Resave the size, otherwise it is garbage
+        return new
 
     def __len__(self):
-        "Returns the length of the bitmap"
-        return len(self.bitmap)
+        "Returns the number of elements in the bitmap"
+        return self.count
+
+    def flush(self, size_only=False):
+        """
+        Forces us to write out the current count to the bitmap,
+        and flushes the underlying bitmap.
+        """
+        # Get the count string
+        count_str = struct.pack(self.SIZE_FMT, self.count)
+
+        # Set the count as the last bytes
+        size_offset = self.bitmap_size / 8
+        self.bitmap[size_offset:size_offset+self.SIZE_LEN] = count_str
+
+        # Flush the underlying bitmap
+        if not size_only: self.bitmap.flush()
+
+    def _read_count(self):
+        "Reads the count from the bitmap"
+        # Set the count as the last bytes
+        size_offset = self.bitmap_size / 8
+        count_str = self.bitmap[size_offset:size_offset+self.SIZE_LEN]
+
+        # Unpack
+        unpacked = struct.unpack(self.SIZE_FMT, count_str)
+        return unpacked[0]
 
