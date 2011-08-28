@@ -2,6 +2,7 @@
 Implements an easy to use Bloom filter on top of
 the bitmap implementation.
 """
+import operator
 import math
 import struct
 import bitmap as bitmaplib
@@ -30,11 +31,9 @@ class BloomFilter(object):
                 in bytes to create. Defaults to 16M.
 
             - k (optional) : The number of hashing algorithms to
-                use. Must be at least 1, up to 4. All 4 are computed
-                simultaneously, so there is not much performance
-                saving in reducing this.
+                use. Must be at least 1.
         """
-        if k < 1 or k > 4: raise ValueError, "Bad value provided for k!"
+        if k < 1: raise ValueError, "Bad value provided for k!"
         if not bitmap: bitmap = bitmaplib.Bitmap(length+self.SIZE_LEN)
         self.bitmap = bitmap
         self.bitmap_size = len(bitmap) - 8*self.SIZE_LEN # Ignore our size
@@ -64,8 +63,23 @@ class BloomFilter(object):
         """
         return math.e ** (-(float(bits)/float(capacity))*(math.log(2)**2))
 
-    def _hash(self, key):
+    def _get_hashes(self, key, k):
+        "Generates a specified number of hashes for a key"
+        hashes = []
+        salt = ""
+        while len(hashes) < k:
+            # Get a set of new hashes
+            new_hashes = self._hash(key, salt)
+            hashes.extend(new_hashes)
+
+            # Generate a new salt
+            salt_raw = reduce(operator.xor, new_hashes) % 9223372036854775808L
+            salt = struct.pack("<q", salt_raw)
+        return hashes[:k]
+
+    def _hash(self, key, salt=""):
         "Computes and returns the DJB, DEK, FNV, and JS hashes"
+        if salt: key = salt + key
         djb_hash = 5381
         dek_hash = len(key)
         fnv_prime = 0x811C9DC5
@@ -85,7 +99,7 @@ class BloomFilter(object):
     def add(self, key, check_first=False):
         "Add a key to the set"
         if not isinstance(key, str): raise ValueError, "Key must be a string!"
-        hashes = self._hash(key)[:self.k_num]
+        hashes = self._get_hashes(key, self.k_num)
         m = self.bitmap_size
 
         # Set the bits for the hashes
@@ -99,7 +113,7 @@ class BloomFilter(object):
     def __contains__(self, key):
         "Checks if the set contains a given key"
         if not isinstance(key, str): raise ValueError, "Key must be a string!"
-        hashes = self._hash(key)[:self.k_num]
+        hashes = self._get_hashes(key, self.k_num)
         m = self.bitmap_size
         for h in hashes:
             if self.bitmap[h % m] == 0: return False
