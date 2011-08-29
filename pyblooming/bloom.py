@@ -175,8 +175,9 @@ class BloomFilter(object):
 
     def close(self):
         "Closes the bloom filter and the underlying bitmap"
-        self.flush()
-        self.bitmap.close()
+        if self.bitmap:
+            self.flush()
+            self.bitmap.close()
 
     def _read_count(self):
         "Reads the count from the bitmap"
