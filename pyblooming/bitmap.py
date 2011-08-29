@@ -108,6 +108,7 @@ class Bitmap(object):
         self.mmap[i:j] = val
 
     def __del__(self):
-        "Flush when we get GC'ed"
+        "Cleanup when we get GC'ed"
         self.flush()
+        self.close()
 
