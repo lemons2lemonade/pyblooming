@@ -42,10 +42,7 @@ class Bitmap(object):
 
     def __getitem__(self, idx):
         "Gets the value of a specific bit. Must take an integer argument"
-        if not isinstance(idx, (int, long)): raise TypeError, "Index be an integer type!"
-        byte = idx / 8
-        if byte < 0 or byte >= self.size: raise IndexError, "Index out of range!"
-
+        byte = idx >> 3
         byte_off  = 7 - idx % 8
         byte_val = ord(self.mmap[byte])
         return (byte_val >> byte_off) & 0x1
@@ -55,10 +52,7 @@ class Bitmap(object):
         Sets the value of a specific bit. The index must be an integer,
         but if val evaluates to True, the bit is set to 1, else 0.
         """
-        if not isinstance(idx, (int, long)): raise TypeError, "Index be an integer type!"
-        byte = idx / 8
-        if byte < 0 or byte >= self.size: raise IndexError, "Index out of range!"
-
+        byte = idx >> 3
         byte_off  = 7 - idx % 8
         byte_val = ord(self.mmap[byte])
         if val:
