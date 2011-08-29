@@ -9,12 +9,14 @@ class Bitmap(object):
     def __init__(self, length, filename=None):
         """
         Creates a new Bitmap object. Bitmap wraps a memory mapped
-        file and allows bit-level operations to be performed.
-        A bitmap can either be created on a file, or using an anonymous map.
+        file and allows bit-level operations to be performed. A bitmap can
+        either be created on a file or can use an anonymous map.
 
         :Parameters:
-            length : The length of the Bitmap in bytes. The number of bits is 8 times this.
-            filename (optional) : Defaults to None. If this is provided, the Bitmap will be file backed.
+          - `length`: The length of the Bitmap in bytes. The number of bits
+            is 8 times this.
+          - `filename` (optional) : Defaults to None. If this is provided,
+            the Bitmap will be file backed.
         """
         # Save if  the size
         self.size = length
@@ -26,7 +28,7 @@ class Bitmap(object):
         else:
             self.fileobj = open(filename, "a+")
 
-            # Write 0's to the file
+            # Zero-fill the file
             size_diff = length - os.path.getsize(filename)
             while size_diff > 0:
                 self.fileobj.write(chr(0) * min(size_diff, 100000))
@@ -83,21 +85,27 @@ class Bitmap(object):
 
     def __or__(self, bitmap):
         "Implements a set union"
-        if not isinstance(self, Bitmap): raise ValueError, "Cannot perform union with non-Bitmap"
-        if self.size != bitmap.size: raise ValueError, "Cannot perform union with non-matching sizes!"
-        bitmap = Bitmap(self.size)
+        if not isinstance(bitmap, Bitmap):
+            raise ValueError, "Cannot perform union with non-Bitmap"
+        if self.size != bitmap.size:
+            raise ValueError, "Cannot perform union with non-matching sizes!"
+
+        result = Bitmap(self.size)
         for i in xrange(self.size):
-            bitmap.mmap[i] = chr(ord(self.mmap[i]) | ord(bitmap.mmap[i]))
-        return bitmap
+            result.mmap[i] = chr(ord(self.mmap[i]) | ord(bitmap.mmap[i]))
+        return result
 
     def __and__(self, bitmap):
         "Implements a set intersection"
-        if not isinstance(self, Bitmap): raise ValueError, "Cannot perform intersection with non-Bitmap"
-        if self.size != bitmap.size: raise ValueError, "Cannot perform intersection with non-matching sizes!"
-        bitmap = Bitmap(self.size)
+        if not isinstance(bitmap, Bitmap):
+            raise ValueError, "Cannot perform intersection with non-Bitmap"
+        if self.size != bitmap.size:
+            raise ValueError, "Cannot perform intersection with non-matching sizes!"
+
+        result = Bitmap(self.size)
         for i in xrange(self.size):
-            bitmap.mmap[i] = chr(ord(self.mmap[i]) & ord(bitmap.mmap[i]))
-        return bitmap
+            result.mmap[i] = chr(ord(self.mmap[i]) & ord(bitmap.mmap[i]))
+        return result
 
     def __getslice__(self, i, j):
         "Allow direct access to the mmap, indexed by byte"
