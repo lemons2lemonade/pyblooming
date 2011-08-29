@@ -73,7 +73,7 @@ class Bitmap(object):
         self.flush()
 
         # Close the mmap
-        self.mmap.close()
+        if self.mmap: self.mmap.close()
         self.mmap = None
 
         # For non-anonymous maps, we need to close the file
