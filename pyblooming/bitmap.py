@@ -107,8 +107,3 @@ class Bitmap(object):
         "Allow direct access to the mmap, indexed by byte"
         self.mmap[i:j] = val
 
-    def __del__(self):
-        "Cleanup when we get GC'ed"
-        self.flush()
-        self.close()
-

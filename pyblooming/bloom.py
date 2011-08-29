@@ -203,9 +203,6 @@ class BloomFilter(object):
         self.bitmap[size_offset:size_offset+self.K_NUM_LEN] = knum_str
         self.bitmap.flush()
 
-    def __del__(self):
-        "Safety first! Cleanup."
-        self.close()
 
 class ScalingBloomFilter(object):
     def __init__(self, filters=None, filenames=None, length=16777216, prob=1E-6, k=4, scale_size=4, prob_reduction=0.9):
