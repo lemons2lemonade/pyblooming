@@ -173,6 +173,11 @@ class BloomFilter(object):
         # Flush the underlying bitmap
         if not size_only: self.bitmap.flush()
 
+    def close(self):
+        "Closes the bloom filter and the underlying bitmap"
+        self.flush()
+        self.bitmap.close()
+
     def _read_count(self):
         "Reads the count from the bitmap"
         # Set the count as the last bytes
@@ -198,8 +203,8 @@ class BloomFilter(object):
         self.bitmap.flush()
 
     def __del__(self):
-        "Safety first! Flush the buffers."
-        self.flush()
+        "Safety first! Cleanup."
+        self.close()
 
 class ScalingBloomFilter(object):
     def __init__(self, filters=None, filenames=None, length=16777216, prob=1E-6, k=4, scale_size=4, prob_reduction=0.9):
@@ -293,6 +298,11 @@ class ScalingBloomFilter(object):
         "Flushes all the underlying Bloom filters"
         for filt in self.filters:
             filt.flush()
+
+    def close(self):
+        "Clses all the underlying bloom filters"
+        for filt in self.filters:
+            filt.close()
 
     def total_capacity(self):
         "Returns the total capacity"
