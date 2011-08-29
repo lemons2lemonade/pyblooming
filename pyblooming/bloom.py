@@ -10,9 +10,11 @@ import bitmap as bitmaplib
 class BloomFilter(object):
     # This is the packing format we use to store the count
     SIZE_FMT = "<Q"
+    K_NUM_FMT = "<I"
 
     # This is how many bytes we need to store the count
     SIZE_LEN = 8
+    K_NUM_LEN = 4
 
     def __init__(self, bitmap=None, length=16777216, k=4):
         """
@@ -36,10 +38,17 @@ class BloomFilter(object):
                 use. Must be at least 1.
         """
         if k < 1: raise ValueError, "Bad value provided for k!"
-        if not bitmap: bitmap = bitmaplib.Bitmap(length+self.SIZE_LEN)
+        if not bitmap: bitmap = bitmaplib.Bitmap(length+self.SIZE_LEN+self.K_NUM_LEN)
         self.bitmap = bitmap
-        self.bitmap_size = len(bitmap) - 8*self.SIZE_LEN # Ignore our size
-        self.k_num = k
+        self.bitmap_size = len(bitmap) - 8*(self.SIZE_LEN+self.K_NUM_LEN) # Ignore our size
+
+        # Restore the k num if we need to
+        self.k_num = self._read_k_num() # Read the existing knum from the file
+        if self.k_num == 0:
+            self.k_num = k
+            self._write_k_num()
+
+        # Restore the count
         self.count = self._read_count() # Read the count from the file
 
     @classmethod
@@ -174,6 +183,20 @@ class BloomFilter(object):
         unpacked = struct.unpack(self.SIZE_FMT, count_str)
         return unpacked[0]
 
+    def _read_k_num(self):
+        "Reads the k-num we should use"
+        size_offset = self.bitmap_size / 8 + self.SIZE_LEN
+        knum_str = self.bitmap[size_offset:size_offset+self.K_NUM_LEN]
+        unpacked = struct.unpack(self.K_NUM_FMT, knum_str)
+        return unpacked[0]
+
+    def _write_k_num(self):
+        "Writes the k-num we should use"
+        size_offset = self.bitmap_size / 8 + self.SIZE_LEN
+        knum_str = struct.pack(self.K_NUM_FMT, self.k_num)
+        self.bitmap[size_offset:size_offset+self.K_NUM_LEN] = knum_str
+        self.bitmap.flush()
+
     def __del__(self):
         "Safety first! Flush the buffers."
         self.flush()
@@ -234,7 +257,6 @@ class ScalingBloomFilter(object):
             filename = self.filenames()
 
         # Create a new bitmap
-        print length, filename
         bitmap = bitmaplib.Bitmap(length, filename)
         filter = BloomFilter(bitmap, k=new_k)
 
@@ -258,8 +280,6 @@ class ScalingBloomFilter(object):
 
     def __contains__(self, key):
         "Checks if the set contains a given key"
-        if not isinstance(key, str): raise ValueError, "Key must be a string!"
-
         # Walk over the indexes in reverse order
         for filt in self.filters[::-1]:
             if key in filt: return True
@@ -273,4 +293,12 @@ class ScalingBloomFilter(object):
         "Flushes all the underlying Bloom filters"
         for filt in self.filters:
             filt.flush()
+
+    def total_capacity(self):
+        "Returns the total capacity"
+        return sum(filt.capacity for filt in self.filters)
+
+    def total_bitmap_size(self):
+        "Returns the total size of the bitmaps in bytes"
+        return sum(len(filt.bitmap) for filt in self.filters) / 8
 
