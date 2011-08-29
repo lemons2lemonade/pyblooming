@@ -70,7 +70,7 @@ class Bitmap(object):
 
     def flush(self):
         "Flushes the contents of the Bitmap to disk."
-        self.mmap.flush()
+        if self.mmap: self.mmap.flush()
         if self.fileobj: self.fileobj.flush()
 
     def close(self):
@@ -112,4 +112,8 @@ class Bitmap(object):
     def __setslice__(self, i, j, val):
         "Allow direct access to the mmap, indexed by byte"
         self.mmap[i:j] = val
+
+    def __del__(self):
+        "Flush when we get GC'ed"
+        self.flush()
 
