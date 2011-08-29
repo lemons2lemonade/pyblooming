@@ -108,7 +108,6 @@ class BloomFilter(object):
 
     def add(self, key, check_first=False):
         "Add a key to the set"
-        if not isinstance(key, str): raise ValueError, "Key must be a string!"
         hashes = self._get_hashes(key, self.k_num)
         m = self.bitmap_size
 
@@ -122,7 +121,6 @@ class BloomFilter(object):
 
     def __contains__(self, key):
         "Checks if the set contains a given key"
-        if not isinstance(key, str): raise ValueError, "Key must be a string!"
         hashes = self._get_hashes(key, self.k_num)
         m = self.bitmap_size
         for h in hashes:
@@ -245,9 +243,8 @@ class ScalingBloomFilter(object):
         filter.capacity = BloomFilter.expected_capacity(len(bitmap),prob)
         return filter
 
-    def add(self, key, check_first=True):
+    def add(self, key, check_first=False):
         "Add a key to the set"
-        if not isinstance(key, str): raise ValueError, "Key must be a string!"
         if check_first and key in self: return False
 
         # Check if we are over capacity, create a new filter
