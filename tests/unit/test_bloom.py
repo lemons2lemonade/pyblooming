@@ -14,6 +14,13 @@ class TestBloomFilter(object):
         """
         pass
 
+    def test_required_bytes(self):
+        """
+        Tests that the number of required bytes that the bloom filter
+        says it needs is the correct given some known-sane values.
+        """
+        pass
+
     def test_k_less_than_one(self):
         """
         Tests that a bloom filter with a ``k`` less than one will
