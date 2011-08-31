@@ -3,7 +3,6 @@ cimport cython
 import os.path
 
 cdef extern from "cbitmaputil.h" nogil:
-    cdef int grow_file(int filedes, int len)
     cdef char* mmap_file(int filedes, int len)
     cdef int mummap_file(char* addr, int len)
     cdef int flush(int filedes, char* addr, int len)
@@ -39,11 +38,12 @@ cdef class Bitmap:
             self.fileobj = open(filename, "a+")
             self.fileno = self.fileobj.fileno()
 
-            # Grow the file if needed
-            if os.path.getsize(filename) < length:
-                if grow_file(self.fileno, self.size) == -1:
-                    self.fileobj.close()
-                    raise OSError, "Failed to grow file size!"
+            # Zero-fill the file
+            size_diff = length - os.path.getsize(filename)
+            while size_diff > 0:
+                self.fileobj.write(chr(0) * min(size_diff, 100000))
+                self.fileobj.flush()
+                size_diff = length - os.path.getsize(filename)
 
             # Create the memory mapped file
             self.mmap = <unsigned char*>mmap_file(self.fileno, self.size)
@@ -75,8 +75,13 @@ cdef class Bitmap:
 
     def flush(self):
         "Flushes the contents of the Bitmap to disk."
-        if flush(self.fileno, <char*>self.mmap, self.size) == -1:
-            raise OSError, "Failed to flush the buffers!"
+        if self.mmap:
+            print "flush",self.fileno, self.size
+            if flush(self.fileno, <char*>self.mmap, self.size) == -1:
+                raise OSError, "Failed to flush the buffers!"
+        if self.fileobj: 
+            print "file flush"
+            self.fileobj.flush()
 
     def close(self):
         "Closes the Bitmap, first flushing the data."
@@ -95,13 +100,13 @@ cdef class Bitmap:
 
     def __getslice__(self, i, j):
         "Allow direct access to the mmap, indexed by byte"
-        if i > j or i < 0 or j > self.size: raise ValueError, "Bad slice!"
+        if i >= j or i < 0 or j > self.size: raise ValueError, "Bad slice!"
         # Create a null terminated string
         return self.mmap[i:j]
 
     def __setslice__(self, i, j, char* val):
         "Allow direct access to the mmap, indexed by byte"
-        if i > j or i < 0 or j > self.size: raise ValueError, "Bad slice!"
+        if i >= j or i < 0 or j > self.size: raise ValueError, "Bad slice!"
         # Create a null terminated string
         cdef int size  = j-i
         cdef int x
