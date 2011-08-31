@@ -3,28 +3,6 @@
 #include <sys/mman.h>
 
 /**
- * Helper to grow an open file to a certain size
- * @arg filedes THe file descriptor to grow.
- * @arg len The size to grow it to.
- * @returns -1 on error, 0 on success;
- */
-int grow_file(int filedes, int len) {
-    // Seek to length - 1
-    off_t result = lseek(filedes, len-1, SEEK_SET);
-    
-    // Check for an error, return an error code
-    if (result == -1) return -1;
-
-    // Write a byte to cause a sparse file to be made
-    result = write(filedes, "", 1);
-
-    // Check for an error, and exit
-    if (result == -1) return -1;
-    return 0;
-}
-
-
-/**
  * Helper to memory map open file descriptors.
  * @arg filedes The file descriptor to mmap in. -1 for anonymous.
  * @arg len The length of bytes to map in
@@ -41,7 +19,7 @@ char* mmap_file(int filedes, int len) {
         fd = -1;
     } else {
         flags |= MAP_FILE;
-        flags |= MAP_PRIVATE;
+        flags |= MAP_SHARED;
         fd = filedes;
     }
 
