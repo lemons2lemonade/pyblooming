@@ -64,9 +64,7 @@ cdef class BloomFilter:
 
         # Restore the count
         self.count = self._read_count() # Read the count from the file
-
-        # Set our info object, allows dynamic properties
-        self.info = {}
+        self.info = {} # Allows dynamic properties
 
     def __dealloc__(self):
         "Cleanup"
@@ -177,14 +175,10 @@ cdef class BloomFilter:
         cdef unsigned int m = self.bitmap_size
         cdef unsigned int i, h
     
-        contains = True
         for i from 0 <= i < self.k_num:
             h = self.hashes[i]
-            if self.bitmap[h % m] == 0:
-                contains = False
-                break
-
-        return contains
+            if self.bitmap[h % m] == 0: return False
+        return True 
 
     def __len__(self):
         "Returns the number of elements in the bitmap"
