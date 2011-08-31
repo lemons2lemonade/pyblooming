@@ -1,4 +1,5 @@
 from libc cimport stdlib
+cimport cython
 import os.path
 
 cdef extern from "cbitmaputil.h" nogil:
@@ -54,10 +55,14 @@ cdef class Bitmap:
         "Returns the size of the Bitmap in bits"
         return 8 * self.size
 
+    @cython.boundscheck(False)
+    @cython.wraparound(False)
     def __getitem__(self, unsigned int idx):
         "Gets the value of a specific bit. Must take an integer argument"
         return <int> (self.mmap[idx >> 3] >> (7 - idx % 8)) & 0x1
 
+    @cython.boundscheck(False)
+    @cython.wraparound(False)
     def __setitem__(self, unsigned int idx, unsigned int val):
         """
         Sets the value of a specific bit. The index must be an integer,

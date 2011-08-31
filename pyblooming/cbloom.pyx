@@ -7,6 +7,7 @@ import operator
 import math
 import struct
 import cbitmap as bitmaplib
+cimport cython
 
 cdef class BloomFilter:
     # This is the packing format we use to store the count
@@ -98,12 +99,14 @@ cdef class BloomFilter:
         """
         return -bits/math.log(prob)*(math.log(2)**2)
 
+    @cython.boundscheck(False)
+    @cython.wraparound(False)
     cdef void _compute_hashes(self, char* key, int k):
         "Generates a specified number of hashes for a key"
         cdef unsigned int djb_hash, dek_hash, fnv_hash, js_hash
         cdef unsigned int fnv_prime = 0x811C9DC5
 
-        cdef unsigned int i
+        cdef unsigned int i,j
         cdef unsigned int salt
         cdef unsigned char key_val
         for i in range(k/4+ (1 if k % 4 > 0 else 0)):
@@ -116,7 +119,7 @@ cdef class BloomFilter:
             # Salt if necessary
             if i > 0:
                 for i in range(sizeof(unsigned int)):
-                    key_val = (salt >> 8*i) & 255
+                    key_val = (salt >> (i<<3)) & 255
                     djb_hash = ((djb_hash << 5) + djb_hash) + key_val
                     dek_hash = ((dek_hash << 6) ^ (dek_hash >> 27)) ^ key_val
                     fnv_hash *= fnv_prime
@@ -145,7 +148,8 @@ cdef class BloomFilter:
             # Generate a new salt
             salt = djb_hash ^ dek_hash ^ fnv_hash ^ js_hash
 
-
+    @cython.boundscheck(False)
+    @cython.wraparound(False)
     def add(self, char* key, int check_first=0):
         "Add a key to the set"
         if check_first and key in self: return False
@@ -161,6 +165,8 @@ cdef class BloomFilter:
         self.count += 1
         return True
 
+    @cython.boundscheck(False)
+    @cython.wraparound(False)
     def __contains__(self, char* key):
         "Checks if the set contains a given key"
         self._compute_hashes(key, self.k_num)
