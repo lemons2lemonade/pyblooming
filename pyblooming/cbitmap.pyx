@@ -3,13 +3,13 @@ cimport cython
 import os.path
 
 cdef extern from "cbitmaputil.h" nogil:
-    cdef char* mmap_file(int filedes, ssize_t len)
-    cdef int mummap_file(char* addr, ssize_t len)
-    cdef int flush(int filedes, char* addr, ssize_t len)
+    cdef char* mmap_file(int filedes, size_t len)
+    cdef int mummap_file(char* addr, size_t len)
+    cdef int flush(int filedes, char* addr, size_t len)
 
 cdef class Bitmap:
     cdef object fileobj
-    cdef ssize_t size
+    cdef size_t size
     cdef int fileno
     cdef unsigned char* mmap
 
@@ -57,13 +57,13 @@ cdef class Bitmap:
 
     @cython.boundscheck(False)
     @cython.wraparound(False)
-    def __getitem__(self, ssize_t idx):
+    def __getitem__(self, size_t idx):
         "Gets the value of a specific bit. Must take an integer argument"
         return <int> (self.mmap[idx >> 3] >> (7 - idx % 8)) & 0x1
 
     @cython.boundscheck(False)
     @cython.wraparound(False)
-    def __setitem__(self, ssize_t idx, unsigned int val):
+    def __setitem__(self, size_t idx, unsigned int val):
         """
         Sets the value of a specific bit. The index must be an integer,
         but if val evaluates to True, the bit is set to 1, else 0.
