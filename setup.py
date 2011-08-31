@@ -15,13 +15,13 @@ except:
 current_path = os.path.dirname(os.path.abspath(__file__))
 
 ext_modules = [
-        Extension("cbitmap",
+        Extension("pyblooming.cbitmap",
             extra_compile_args=['-std=gnu99', '-O2'],
             sources = ["pyblooming/cbitmap.pyx","pyblooming/cbitmaputil.c"],
             include_dirs = [os.path.join(current_path, 'pyblooming')],
             library_dirs = [os.path.join(current_path, 'pyblooming')],
             ),
-        Extension("cbloom",
+        Extension("pyblooming.cbloom",
             extra_compile_args=['-std=gnu99', '-O2'],
             sources = ["pyblooming/cbloom.pyx"],
             include_dirs = [os.path.join(current_path, 'pyblooming')],
