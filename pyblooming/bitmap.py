@@ -83,30 +83,6 @@ class Bitmap(object):
             self.fileobj.close()
             self.fileobj = None
 
-    def __or__(self, bitmap):
-        "Implements a set union"
-        if not isinstance(bitmap, Bitmap):
-            raise ValueError, "Cannot perform union with non-Bitmap"
-        if self.size != bitmap.size:
-            raise ValueError, "Cannot perform union with non-matching sizes!"
-
-        result = Bitmap(self.size)
-        for i in xrange(self.size):
-            result.mmap[i] = chr(ord(self.mmap[i]) | ord(bitmap.mmap[i]))
-        return result
-
-    def __and__(self, bitmap):
-        "Implements a set intersection"
-        if not isinstance(bitmap, Bitmap):
-            raise ValueError, "Cannot perform intersection with non-Bitmap"
-        if self.size != bitmap.size:
-            raise ValueError, "Cannot perform intersection with non-matching sizes!"
-
-        result = Bitmap(self.size)
-        for i in xrange(self.size):
-            result.mmap[i] = chr(ord(self.mmap[i]) & ord(bitmap.mmap[i]))
-        return result
-
     def __getslice__(self, i, j):
         "Allow direct access to the mmap, indexed by byte"
         return self.mmap[i:j]
