@@ -21,6 +21,12 @@ ext_modules = [
             include_dirs = [os.path.join(current_path, 'pyblooming')],
             library_dirs = [os.path.join(current_path, 'pyblooming')],
             ),
+        Extension("cbloom",
+            extra_compile_args=['-std=gnu99', '-O2'],
+            sources = ["pyblooming/cbloom.pyx"],
+            include_dirs = [os.path.join(current_path, 'pyblooming')],
+            library_dirs = [os.path.join(current_path, 'pyblooming')],
+            ),
       ]
 
 # Create the actual setup method

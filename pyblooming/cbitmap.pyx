@@ -83,12 +83,12 @@ cdef class Bitmap:
         # Close the mmap
         if self.mmap:
             mummap_file(<char*>self.mmap, self.size)
-            self.mmap = None
+            self.mmap = NULL 
 
         # For non-anonymous maps, we need to close the file
         if self.fileobj:
             self.fileobj.close()
-            self.fileobj = None
+            self.fileobj = None 
 
     def __getslice__(self, i, j):
         "Allow direct access to the mmap, indexed by byte"
