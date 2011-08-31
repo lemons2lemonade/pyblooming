@@ -21,6 +21,7 @@ cdef class BloomFilter:
     cdef unsigned int bitmap_size
     cdef unsigned int k_num
     cdef unsigned int count
+    cdef unsigned int* hashes
 
     def __cinit__(self, bitmap=None, length=16777216, k=4):
         """
@@ -55,9 +56,16 @@ cdef class BloomFilter:
         if self.k_num == 0:
             self.k_num = k
             self._write_k_num()
+    
+        # Store a buffer for our hashes
+        self.hashes = <unsigned int*>stdlib.malloc(k*sizeof(unsigned int))
 
         # Restore the count
         self.count = self._read_count() # Read the count from the file
+
+    def __dealloc__(self):
+        "Cleanup"
+        stdlib.free(self.hashes)
 
     @classmethod
     def required_bits(cls, capacity, prob):
@@ -90,93 +98,82 @@ cdef class BloomFilter:
         """
         return -bits/math.log(prob)*(math.log(2)**2)
 
-    cdef unsigned int* _get_hashes(self, char* key, int k):
+    cdef void _compute_hashes(self, char* key, int k):
         "Generates a specified number of hashes for a key"
-        cdef unsigned int* hashes = <unsigned int*>stdlib.malloc(k*sizeof(unsigned int))
-        cdef unsigned int* new_hashes
-        cdef unsigned int i
-        cdef unsigned int salt = 0
-        for i in range(k/4+ (1 if k % 4 > 0 else 0)):
-            # Compute 4 new hashes
-            new_hashes = self._hash(key, i > 0, salt)
-
-            # Copy the hashes that are in range over
-            for j in range(4):
-                if i+j < k: hashes[i*4+j] = new_hashes[j]
-
-            # Generate a new salt
-            salt = new_hashes[0] ^ new_hashes[1] ^ new_hashes[2] ^ new_hashes[3]
-
-            # Free the new hashes
-            stdlib.free(new_hashes)
-    
-        return hashes
-
-    cdef unsigned int* _hash(self, char* key, int use_hash, unsigned int salt): 
-        "Computes and returns the DJB, DEK, FNV, and JS hashes"
-        cdef unsigned int djb_hash = 5381
-        cdef unsigned int dek_hash = len(key)
+        cdef unsigned int djb_hash, dek_hash, fnv_hash, js_hash
         cdef unsigned int fnv_prime = 0x811C9DC5
-        cdef unsigned int fnv_hash = 0
-        cdef unsigned int js_hash = 1315423911
+
+        cdef unsigned int i
+        cdef unsigned int salt
         cdef unsigned char key_val
-       
-        if use_hash:
-            for i in range(sizeof(unsigned int)):
-                key_val = (salt >> 8*i) & 255
+        for i in range(k/4+ (1 if k % 4 > 0 else 0)):
+            # Reset the hashes
+            djb_hash = 5381
+            dek_hash = len(key)
+            fnv_hash = 0
+            js_hash = 1315423911
+          
+            # Salt if necessary
+            if i > 0:
+                for i in range(sizeof(unsigned int)):
+                    key_val = (salt >> 8*i) & 255
+                    djb_hash = ((djb_hash << 5) + djb_hash) + key_val
+                    dek_hash = ((dek_hash << 6) ^ (dek_hash >> 27)) ^ key_val
+                    fnv_hash *= fnv_prime
+                    fnv_hash ^= key_val
+                    js_hash ^= ((js_hash << 5) + key_val + (js_hash >> 2))
+
+            for key_val in key:
                 djb_hash = ((djb_hash << 5) + djb_hash) + key_val
                 dek_hash = ((dek_hash << 6) ^ (dek_hash >> 27)) ^ key_val
                 fnv_hash *= fnv_prime
                 fnv_hash ^= key_val
                 js_hash ^= ((js_hash << 5) + key_val + (js_hash >> 2))
 
-        for key_val in key:
-            djb_hash = ((djb_hash << 5) + djb_hash) + key_val
-            dek_hash = ((dek_hash << 6) ^ (dek_hash >> 27)) ^ key_val
-            fnv_hash *= fnv_prime
-            fnv_hash ^= key_val
-            js_hash ^= ((js_hash << 5) + key_val + (js_hash >> 2))
+            # Copy the hashes that are in range over
+            for j in range(4):
+                if i+j < k: 
+                    if j == 0:
+                        self.hashes[i*4] = djb_hash
+                    elif j == 1:
+                        self.hashes[i*4+1] = dek_hash
+                    elif j == 2:
+                        self.hashes[i*4+2] = fnv_hash
+                    elif j == 3:
+                        self.hashes[i*4+3] = js_hash
 
-        cdef unsigned int* ret = <unsigned int*>stdlib.malloc(4*sizeof(unsigned int))
-        ret[0] = djb_hash
-        ret[1] = dek_hash
-        ret[2] = fnv_hash
-        ret[3] = js_hash
+            # Generate a new salt
+            salt = djb_hash ^ dek_hash ^ fnv_hash ^ js_hash
 
-        return ret
 
     def add(self, char* key, int check_first=0):
         "Add a key to the set"
         if check_first and key in self: return False
-        cdef unsigned int h
+        self._compute_hashes(key, self.k_num)
         cdef unsigned int m = self.bitmap_size
-        cdef unsigned int* hashes = self._get_hashes(key, self.k_num)
+        cdef unsigned int i, h
 
         # Set the bits for the hashes
         for i from 0 <= i < self.k_num:
-            h = hashes[i]
+            h = self.hashes[i]
             self.bitmap[h % m] = 1
 
-        # Free the new hashes
         self.count += 1
-        stdlib.free(hashes)
         return True
 
     def __contains__(self, char* key):
         "Checks if the set contains a given key"
-        cdef unsigned int h
+        self._compute_hashes(key, self.k_num)
         cdef unsigned int m = self.bitmap_size
-        cdef unsigned int* hashes = self._get_hashes(key, self.k_num)
-        cdef unsigned int i
+        cdef unsigned int i, h
     
         contains = True
         for i from 0 <= i < self.k_num:
-            h = hashes[i]
+            h = self.hashes[i]
             if self.bitmap[h % m] == 0:
                 contains = False
                 break
 
-        stdlib.free(hashes)
         return contains
 
     def __len__(self):
@@ -193,16 +190,17 @@ cdef class BloomFilter:
 
         # Set the count as the last bytes
         size_offset = self.bitmap_size / 8
-        self.bitmap[size_offset:size_offset+self.SIZE_LEN] = count_str
+        if self.bitmap: self.bitmap[size_offset:size_offset+self.SIZE_LEN] = count_str
 
         # Flush the underlying bitmap
-        if not size_only: self.bitmap.flush()
+        if not size_only and self.bitmap: self.bitmap.flush()
 
     def close(self):
         "Closes the bloom filter and the underlying bitmap"
         if self.bitmap:
             self.flush()
             self.bitmap.close()
+            self.bitmap = None
 
     def _read_count(self):
         "Reads the count from the bitmap"
