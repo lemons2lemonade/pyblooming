@@ -18,9 +18,10 @@ cdef class BloomFilter:
     SIZE_LEN = 8
     K_NUM_LEN = 4
 
-    cdef object bitmap
+    cdef public object info
+    cdef public object bitmap
+    cdef public unsigned int k_num
     cdef unsigned int bitmap_size
-    cdef unsigned int k_num
     cdef unsigned int count
     cdef unsigned int* hashes
 
@@ -63,6 +64,9 @@ cdef class BloomFilter:
 
         # Restore the count
         self.count = self._read_count() # Read the count from the file
+
+        # Set our info object, allows dynamic properties
+        self.info = {}
 
     def __dealloc__(self):
         "Cleanup"
