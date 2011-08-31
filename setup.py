@@ -1,4 +1,8 @@
-from setuptools import setup, Command
+from setuptools import setup
+from setuptools.extension import Extension
+from Cython.Distutils import build_ext
+import os.path
+import os
 import pyblooming
 
 # Get the long description by reading the README
@@ -6,6 +10,18 @@ try:
     readme_content = open("README.rst").read()
 except:
     readme_content = ""
+
+# Get the current dir
+current_path = os.path.dirname(os.path.abspath(__file__))
+
+ext_modules = [
+        Extension("cbitmap",
+            extra_compile_args=['-std=gnu99', '-O2'],
+            sources = ["pyblooming/cbitmap.pyx","pyblooming/cbitmaputil.c"],
+            include_dirs = [os.path.join(current_path, 'pyblooming')],
+            library_dirs = [os.path.join(current_path, 'pyblooming')],
+            ),
+      ]
 
 # Create the actual setup method
 setup(name='pyblooming',
@@ -27,5 +43,7 @@ setup(name='pyblooming',
         "Operating System :: POSIX",
         "Programming Language :: Python",
         "Topic :: Software Development :: Libraries"
-    ]
-      )
+      ],
+      cmdclass = {'build_ext':build_ext},
+      ext_modules = ext_modules,
+    )
