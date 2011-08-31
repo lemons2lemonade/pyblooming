@@ -8,7 +8,7 @@
  * @arg len The length of bytes to map in
  * @returns 0 on error, or the address of the memory map
  */
-char* mmap_file(int filedes, int len) {
+char* mmap_file(int filedes, ssize_t len) {
     int flags = 0;
     int fd = 0;
 
@@ -39,7 +39,7 @@ char* mmap_file(int filedes, int len) {
  * @args len The number of bytes to unmap
  * @returns -1 on error, else 0.
  */
-int mummap_file(char* addr, int len) {
+int mummap_file(char* addr, ssize_t len) {
     int res = munmap(addr, len);
     if (res == -1) return -1;
     return 0;
@@ -52,7 +52,7 @@ int mummap_file(char* addr, int len) {
  * @arg len The length of bytes of the mmap region
  * @returns -1 on error, 0 on success
  */
-int flush(int filedes, char* addr, int len) {
+int flush(int filedes, char* addr, ssize_t len) {
     // Don't bother if there is no file backing
     if (filedes >= 0) {
         // First flush the mmap regions syncronously
