@@ -158,16 +158,17 @@ class BloomFilter(object):
 
         # Set the count as the last bytes
         size_offset = self.bitmap_size / 8
-        self.bitmap[size_offset:size_offset+self.SIZE_LEN] = count_str
+        if self.bitmap: self.bitmap[size_offset:size_offset+self.SIZE_LEN] = count_str
 
         # Flush the underlying bitmap
-        if not size_only: self.bitmap.flush()
+        if not size_only and self.bitmap: self.bitmap.flush()
 
     def close(self):
         "Closes the bloom filter and the underlying bitmap"
         if self.bitmap:
             self.flush()
             self.bitmap.close()
+            self.bitmap = None
 
     def _read_count(self):
         "Reads the count from the bitmap"
