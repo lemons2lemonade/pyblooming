@@ -57,6 +57,7 @@ class BloomFilter(object):
 
         # Restore the count
         self.count = self._read_count() # Read the count from the file
+        self.info = {} # Allows dynamic properties
 
     @classmethod
     def required_bits(cls, capacity, prob):
