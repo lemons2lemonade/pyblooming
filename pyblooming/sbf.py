@@ -47,8 +47,8 @@ class ScalingBloomFilter(object):
         prob = self.prob
         for filt in self.filters:
             size = len(filt.bitmap)
-            filt.prob = prob
-            filt.capacity = BloomFilter.expected_capacity(size, prob)
+            filt.info["prob"] = prob
+            filt.info["capacity"] = BloomFilter.expected_capacity(size, prob)
             prob *= self.prob_reduction
 
     def _create_filter(self):
@@ -60,7 +60,7 @@ class ScalingBloomFilter(object):
         if len(self.filters) > 0:
             length = len(self.filters[-1].bitmap)/8 * self.scale_size
             new_k = self.filters[-1].k_num + 1
-            prob = self.filters[-1].prob * self.prob_reduction
+            prob = self.filters[-1].info["prob"] * self.prob_reduction
 
         # Get the filename
         filename = None
@@ -72,8 +72,8 @@ class ScalingBloomFilter(object):
         filter = BloomFilter(bitmap, k=new_k)
 
         # Add the new properties
-        filter.prob = prob
-        filter.capacity = BloomFilter.expected_capacity(len(bitmap),prob)
+        filter.info["prob"] = prob
+        filter.info["capacity"] = BloomFilter.expected_capacity(len(bitmap),prob)
         return filter
 
     def add(self, key, check_first=False):
@@ -82,7 +82,7 @@ class ScalingBloomFilter(object):
 
         # Check if we are over capacity, create a new filter
         filt = self.filters[-1]
-        if len(filt)+1 >= filt.capacity:
+        if len(filt)+1 >= filt.info["capacity"]:
             filt = self._create_filter()
             self.filters.append(filt)
 
@@ -112,7 +112,7 @@ class ScalingBloomFilter(object):
 
     def total_capacity(self):
         "Returns the total capacity"
-        return sum(filt.capacity for filt in self.filters)
+        return sum(filt.info["capacity"] for filt in self.filters)
 
     def total_bitmap_size(self):
         "Returns the total size of the bitmaps in bytes"
