@@ -124,12 +124,12 @@ class BloomFilter(object):
 
     def add(self, key, check_first=False):
         "Add a key to the set"
+        if check_first and key in self: return False
         hashes = self._get_hashes(key, self.k_num)
         m = self.bitmap_size
 
         # Set the bits for the hashes
         for h in hashes:
-            if check_first and self.bitmap[h % m] == 0: return False
             self.bitmap[h % m] = 1
         self.count += 1
 
