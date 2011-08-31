@@ -5,7 +5,12 @@ the bitmap implementation.
 import operator
 import math
 import struct
-import bitmap as bitmaplib
+
+# Try to import the C version, fallback to Python
+try:
+    import cbitmap as bitmaplib
+except ImportError:
+    import bitmap as bitmaplib
 
 class BloomFilter(object):
     # This is the packing format we use to store the count
