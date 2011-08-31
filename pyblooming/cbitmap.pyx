@@ -56,19 +56,17 @@ cdef class Bitmap:
 
     def __getitem__(self, unsigned int idx):
         "Gets the value of a specific bit. Must take an integer argument"
-        cdef unsigned char byte_val = self.mmap[idx >> 3]
-        return <int> (byte_val >> (7 - idx % 8)) & 0x1
+        return <int> (self.mmap[idx >> 3] >> (7 - idx % 8)) & 0x1
 
     def __setitem__(self, unsigned int idx, unsigned int val):
         """
         Sets the value of a specific bit. The index must be an integer,
         but if val evaluates to True, the bit is set to 1, else 0.
         """
-        cdef unsigned char byte_val = self.mmap[idx >> 3]
         if val:
-            self.mmap[idx >> 3] = byte_val | 1 << (7 - idx % 8)
+            self.mmap[idx >> 3] = self.mmap[idx >> 3] | 1 << (7 - idx % 8)
         else:
-            self.mmap[idx >> 3] = byte_val & ~(1 << (7 - idx % 8))
+            self.mmap[idx >> 3] = self.mmap[idx >> 3] & ~(1 << (7 - idx % 8))
 
     def flush(self):
         "Flushes the contents of the Bitmap to disk."
