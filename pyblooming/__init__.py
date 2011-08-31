@@ -5,7 +5,12 @@ try:
     from cbitmap import Bitmap
 except ImportError:
     from bitmap import Bitmap
-from bloom import BloomFilter, ScalingBloomFilter
+try:
+    from cbloom import BloomFilter
+except ImportError:
+    from bloom import BloomFilter
+
+from sbf import ScalingBloomFilter
 
 __all__ = ["Bitmap", "BloomFilter", "ScalingBloomFilter"]
 __version__ = "0.1.0"
