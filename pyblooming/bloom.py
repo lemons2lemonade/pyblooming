@@ -2,9 +2,9 @@
 Implements an easy to use Bloom filter on top of
 the bitmap implementation.
 """
-import operator
 import math
 import struct
+import sys
 
 # Try to import the C version, fallback to Python
 try:
@@ -92,6 +92,7 @@ class BloomFilter(object):
 
     def _get_hashes(self, key, k):
         "Generates a specified number of hashes for a key"
+        max_val = (sys.maxint+1)*2
         hashes = []
         salt = ""
         while len(hashes) < k:
@@ -100,13 +101,14 @@ class BloomFilter(object):
             hashes.extend(new_hashes)
 
             # Generate a new salt
-            salt_raw = reduce(operator.xor, new_hashes) % 9223372036854775808L
-            salt = struct.pack("<q", salt_raw)
+            salt_raw = (new_hashes[0] ^ new_hashes[1] ^ new_hashes[2] ^ new_hashes[3]) % max_val
+            salt = struct.pack("<Q", salt_raw)
         return hashes[:k]
 
     def _hash(self, key, salt=""):
         "Computes and returns the DJB, DEK, FNV, and JS hashes"
         if salt: key = salt + key
+        max_val = (sys.maxint+1)*2
         djb_hash = 5381
         dek_hash = len(key)
         fnv_prime = 0x811C9DC5
@@ -115,11 +117,11 @@ class BloomFilter(object):
 
         for elem in key:
             key_val = ord(elem)
-            djb_hash = ((djb_hash << 5) + djb_hash) + key_val
-            dek_hash = ((dek_hash << 6) ^ (dek_hash >> 27)) ^ key_val
-            fnv_hash *= fnv_prime
-            fnv_hash ^= key_val
-            js_hash ^= ((js_hash << 5) + key_val + (js_hash >> 2))
+            djb_hash = (((djb_hash << 5) + djb_hash) + key_val) % max_val
+            dek_hash = (((dek_hash << 6) ^ (dek_hash >> 27)) ^ key_val) % max_val
+            fnv_hash = (fnv_hash * fnv_prime) % max_val
+            fnv_hash = fnv_hash ^ key_val
+            js_hash ^= (((js_hash << 5) + key_val + (js_hash >> 2)) % max_val)
 
         return (djb_hash, dek_hash, fnv_hash, js_hash)
 
