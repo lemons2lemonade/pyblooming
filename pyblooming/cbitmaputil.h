@@ -5,14 +5,6 @@
 #define CBITMAP_H
 
 /**
- * Helper to grow an open file to a certain size
- * @arg filedes THe file descriptor to grow.
- * @arg len The size to grow it to.
- * @returns -1 on error, 0 on success;
- */
-int grow_file(int filedes, int len);
-
-/**
  * Helper to memory map open file descriptors.
  * @arg filedes The file descriptor to mmap in. -1 for anonymous.
  * @arg len The length of bytes to map in
