@@ -20,7 +20,7 @@ cdef class BloomFilter:
 
     cdef public object info
     cdef public object bitmap
-    cdef public unsigned int k_num
+    cdef readonly unsigned int k_num
     cdef size_t bitmap_size
     cdef size_t count
     cdef size_t* hashes
@@ -60,7 +60,7 @@ cdef class BloomFilter:
             self._write_k_num()
     
         # Store a buffer for our hashes
-        self.hashes = <size_t*>stdlib.malloc(k*sizeof(size_t))
+        self.hashes = <size_t*>stdlib.malloc((((k/4)+2)*4)*sizeof(size_t))
 
         # Restore the count
         self.count = self._read_count() # Read the count from the file
@@ -103,15 +103,22 @@ cdef class BloomFilter:
 
     @cython.boundscheck(False)
     @cython.wraparound(False)
-    cdef void _compute_hashes(self, char* key, int k):
+    cdef void _compute_hashes(self, char* key):
         "Generates a specified number of hashes for a key"
         cdef size_t djb_hash, dek_hash, fnv_hash, js_hash
         cdef size_t fnv_prime = 0x811C9DC5
         cdef size_t salt
 
-        cdef int i,j
+        cdef int i,j,rounds
+        cdef unsigned int k = self.k_num
         cdef unsigned char key_val
-        for i in range(k/4+ (1 if k % 4 > 0 else 0)):
+
+        # Compute the number of rounds we need
+        rounds = k / 4
+        if (k & 3) > 0:
+            rounds += 1
+        
+        for i in range(rounds):
             # Reset the hashes
             djb_hash = 5381
             dek_hash = len(key)
@@ -136,23 +143,17 @@ cdef class BloomFilter:
                 fnv_hash ^= key_val
                 js_hash ^= ((js_hash << 5) + key_val + (js_hash >> 2))
 
-            # Copy the hashes that are in range over
-            for j in range(4):
-                if i+j < k: 
-                    if j == 0:
-                        self.hashes[i*4] = djb_hash
-                    elif j == 1:
-                        self.hashes[i*4+1] = dek_hash
-                    elif j == 2:
-                        self.hashes[i*4+2] = fnv_hash
-                    elif j == 3:
-                        self.hashes[i*4+3] = js_hash
+            # Copy the hashes
+            self.hashes[i*4] = djb_hash
+            self.hashes[i*4+1] = dek_hash
+            self.hashes[i*4+2] = fnv_hash
+            self.hashes[i*4+3] = js_hash
 
             # Generate a new salt
             salt = djb_hash ^ dek_hash ^ fnv_hash ^ js_hash
 
     def print_hashes(self, char* key):
-        self._compute_hashes(key, self.k_num)
+        self._compute_hashes(key)
         cdef int i
         cdef size_t h
 
@@ -165,8 +166,12 @@ cdef class BloomFilter:
     @cython.wraparound(False)
     def add(self, char* key, int check_first=0):
         "Add a key to the set"
-        if check_first and key in self: return False
-        self._compute_hashes(key, self.k_num)
+        if check_first:
+            if self.__contains__(key): 
+                return False
+        else:
+            self._compute_hashes(key)
+
         cdef size_t m = self.bitmap_size
         cdef size_t h
         cdef int i
@@ -183,7 +188,7 @@ cdef class BloomFilter:
     @cython.wraparound(False)
     def __contains__(self, char* key):
         "Checks if the set contains a given key"
-        self._compute_hashes(key, self.k_num)
+        self._compute_hashes(key)
         cdef size_t m = self.bitmap_size
         cdef size_t h
         cdef int i
@@ -191,7 +196,7 @@ cdef class BloomFilter:
         for i from 0 <= i < self.k_num:
             h = self.hashes[i]
             if self.bitmap[h % m] == 0: return False
-        return True 
+        return True
 
     def __len__(self):
         "Returns the number of elements in the bitmap"
