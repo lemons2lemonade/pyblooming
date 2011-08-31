@@ -94,13 +94,7 @@ cdef class Bitmap:
         "Allow direct access to the mmap, indexed by byte"
         if i > j or i < 0 or j > self.size: raise ValueError, "Bad slice!"
         # Create a null terminated string
-        cdef int size  = j-i
-        cdef char* buffer = <char*>stdlib.malloc(size+1)
-        buffer[size] = 0
-        cdef int x
-        for x in xrange(size):
-            buffer[x] = self.mmap[i+x]
-        return <bytes> buffer
+        return self.mmap[i:j]
 
     def __setslice__(self, i, j, char* val):
         "Allow direct access to the mmap, indexed by byte"
@@ -109,6 +103,6 @@ cdef class Bitmap:
         cdef int size  = j-i
         cdef int x
         for x in xrange(size):
-            self.mmap[i+x] = buffer[x]
+            self.mmap[i+x] = val[x]
 
 
