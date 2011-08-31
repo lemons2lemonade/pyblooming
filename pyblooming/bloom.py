@@ -143,24 +143,6 @@ class BloomFilter(object):
             if self.bitmap[h % m] == 0: return False
         return True
 
-    def __or__(self, bloom):
-        "Implements a set union"
-        if not isinstance(bloom, BloomFilter): raise ValueError, "Cannot perform union with non-BloomFilter!"
-        bitmap = self.bitmap | bloom.bitmap
-        new = BloomFilter(bitmap=bitmap,k=self.k_num)
-        new.count = self.count + bloom.count # Sum the counts, as an approximation
-        new.flush(size_only=True) # Resave the size, otherwise it is garbage
-        return new
-
-    def __and__(self, bloom):
-        "Implements a set intersection"
-        if not isinstance(bloom, BloomFilter): raise ValueError, "Cannot perform intersection with non-BloomFilter!"
-        bitmap = self.bitmap & bloom.bitmap
-        new = BloomFilter(bitmap=bitmap,k=self.k_num)
-        new.count = min(self.count, bloom.count) # Use the minimum count, as an approximation
-        new.flush(size_only=True) # Resave the size, otherwise it is garbage
-        return new
-
     def __len__(self):
         "Returns the number of elements in the bitmap"
         return self.count
