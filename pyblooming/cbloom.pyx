@@ -75,7 +75,7 @@ cdef class BloomFilter:
         """
         Returns the number of bits required to achieve
         the desired false positive probability with a given
-        capacity.
+        capacity. Assumes optimal K.
         """
         raw = -capacity*math.log(prob)/(math.log(2)**2)
         return int(math.ceil(raw))
@@ -89,7 +89,7 @@ cdef class BloomFilter:
     def expected_probability(cls, bits, capacity):
         """
         Returns the expected probability of false positives
-        given a capacity and bit count.
+        given a capacity and bit count. Assumes optimal K.
         """
         return math.e ** (-(float(bits)/float(capacity))*(math.log(2)**2))
 
@@ -97,9 +97,17 @@ cdef class BloomFilter:
     def expected_capacity(cls, bits, prob):
         """
         Returns the expected capacity given a number
-        of bits and an enforced probability
+        of bits and an enforced probability. Assumes optimal K.
         """
         return -bits/math.log(prob)*(math.log(2)**2)
+
+    @classmethod
+    def ideal_k(cls, bits, capacity):
+        """
+        Calculates the ideal K to minimize false positives
+        given the number of bits and capacity.
+        """
+        return math.log(2) * bits / capacity
 
     @cython.boundscheck(False)
     @cython.wraparound(False)
