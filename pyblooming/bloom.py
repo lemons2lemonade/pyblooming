@@ -44,10 +44,10 @@ class BloomFilter(object):
             raise ValueError, "Bad value provided for k!"
 
         if not bitmap:
-            bitmap = bitmaplib.Bitmap(length+self.SIZE_LEN+self.K_NUM_LEN)
+            bitmap = bitmaplib.Bitmap(length+self.extra_buffer())
 
         self.bitmap = bitmap
-        self.bitmap_size = len(bitmap) - 8*(self.SIZE_LEN+self.K_NUM_LEN) # Ignore our size
+        self.bitmap_size = len(bitmap) - 8*self.extra_buffer() # Ignore our size
 
         # Restore the k num if we need to
         self.k_num = self._read_k_num() # Read the existing knum from the file
@@ -58,6 +58,27 @@ class BloomFilter(object):
         # Restore the count
         self.count = self._read_count() # Read the count from the file
         self.info = {} # Allows dynamic properties
+
+    @classmethod
+    def extra_buffer(cls):
+        """
+        Returns the extra bytes we need for our buffer info.
+        """
+        return cls.SIZE_LEN + cls.K_NUM_LEN
+
+    @classmethod
+    def for_capacity(cls, capacity, probability):
+        """
+        Creates a new bloom filter that computes the
+        size required for the given capacity and probability,
+        and sets the ideal K.
+        """
+        # Get the number of bytes and bits
+        bytes = cls.required_bytes(capacity, probability)
+        bits = bytes*8 # The bytes may round up, so get the bits again
+        ideal_k = cls.ideal_k(bits, capacity)
+        ideal_k = int(math.ceil(ideal_k))
+        return BloomFilter(length=bytes+cls.extra_buffer(), k=ideal_k)
 
     @classmethod
     def required_bits(cls, capacity, prob):
