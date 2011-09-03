@@ -21,31 +21,17 @@ class BloomFilter(object):
     SIZE_LEN = 8
     K_NUM_LEN = 4
 
-    def __init__(self, bitmap=None, length=16777216, k=4):
+    def __init__(self, bitmap, k):
         """
         Creates a new Bloom Filter instance. A bloom filter
-        requires a bitmap underneath, which can either be
-        provided or created. If a bitmap is not provided, then
-        an anonymous bitmap is created and used. The anonymous
-        bitmap defaults to 16M but that can be changed.
+        requires a bitmap underneath.
 
         :Parameters:
-          - bitmap (optional) : The bitmap that should be used.
-            An anonymous bitmap will be created if one is not
-            provided.
-          - length (optional) : The size of the anonymous bitmap
-            in bytes to create. Defaults to 16M. Must be at least
-            large enough to store the count, which means at least
-            SIZE_LEN bytes (8).
-          - k (optional) : The number of hashing algorithms to
+          - bitmap : The bitmap that should be used.
+          - k : The number of hashing algorithms to
             use. Must be at least 1.
         """
-        if k < 1:
-            raise ValueError, "Bad value provided for k!"
-
-        if not bitmap:
-            bitmap = bitmaplib.Bitmap(length+self.extra_buffer())
-
+        if k < 1: raise ValueError, "Bad value provided for k!"
         self.bitmap = bitmap
         self.bitmap_size = len(bitmap) - 8*self.extra_buffer() # Ignore our size
 

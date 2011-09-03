@@ -25,31 +25,17 @@ cdef class BloomFilter:
     cdef size_t count
     cdef size_t* hashes
 
-    def __cinit__(self, bitmap=None, length=16777216, k=4):
+    def __cinit__(self, bitmap, k):
         """
         Creates a new Bloom Filter instance. A bloom filter
-        requires a bitmap underneath, which can either be
-        provided or created. If a bitmap is not provided, then
-        an anonymous bitmap is created and used. The anonymous
-        bitmap defaults to 16M but that can be changed.
+        requires a bitmap underneath.
 
         :Parameters:
-          - bitmap (optional) : The bitmap that should be used.
-            An anonymous bitmap will be created if one is not
-            provided.
-          - length (optional) : The size of the anonymous bitmap
-            in bytes to create. Defaults to 16M. Must be at least
-            large enough to store the count, which means at least
-            SIZE_LEN bytes (8).
-          - k (optional) : The number of hashing algorithms to
+          - bitmap : The bitmap that should be used.
+          - k : The number of hashing algorithms to
             use. Must be at least 1.
         """
-        if k < 1:
-            raise ValueError, "Bad value provided for k!"
-
-        if not bitmap:
-            bitmap = bitmaplib.Bitmap(length+self.extra_buffer())
-
+        if k < 1: raise ValueError, "Bad value provided for k!"
         self.bitmap = bitmap
         self.bitmap_size = len(bitmap) - 8*self.extra_buffer() # Ignore our size
 
@@ -60,6 +46,10 @@ cdef class BloomFilter:
             self._write_k_num()
     
         # Store a buffer for our hashes
+        # k/4 is the number of hashing rounds,
+        # We add 2 to the number of rounds (to prevent random segfaults...)
+        # Multiply by 4 to have the correct number of hashes
+        # Multiply by the size of size_t for each hash
         self.hashes = <size_t*>stdlib.malloc((((k/4)+2)*4)*sizeof(size_t))
 
         # Restore the count
