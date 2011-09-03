@@ -72,14 +72,25 @@ cdef class BloomFilter:
         """
         Creates a new bloom filter that computes the
         size required for the given capacity and probability,
-        and sets the ideal K.
+        and sets the ideal K. Uses an anonymous bitmap.
+        """
+        bytes, ideal_k = cls.params_for_capacity(capacity, probability)
+        bitmap = bitmaplib.Bitmap(bytes)
+        return BloomFilter(bitmap, ideal_k)
+
+    @classmethod
+    def params_for_capacity(cls, capacity, probability):
+        """
+        Returns the number of bytes and ideal K value that
+        should be used to create a Bloom Filter for the given
+        capacity and probability.
         """
         # Get the number of bytes and bits
         bytes = cls.required_bytes(capacity, probability)
         bits = bytes*8 # The bytes may round up, so get the bits again
         ideal_k = cls.ideal_k(bits, capacity)
         ideal_k = int(math.ceil(ideal_k))
-        return BloomFilter(length=bytes+cls.extra_buffer(), k=ideal_k)
+        return bytes+cls.extra_buffer(), ideal_k
 
     @classmethod
     def required_bits(cls, capacity, prob):
