@@ -32,13 +32,17 @@ cdef class BloomFilter:
         requires a bitmap underneath.
 
         :Parameters:
-          - bitmap : The bitmap that should be used.
+          - bitmap : The bitmap that should be used. Must be large enough to
+            store the additional meta data. extra_buffers() should be used to
+            determine the amount of additional padding.
           - k : The number of hashing algorithms to
             use. Must be at least 1.
         """
+        if bitmap is None or k is None: raise ValueError, "Must provide bitmap and k!"
         if k < 1: raise ValueError, "Bad value provided for k!"
         self.bitmap = bitmap
         self.bitmap_size = len(bitmap) - 8*self.extra_buffer() # Ignore our size
+        if self.bitmap_size <= 0: raise ValueError, "Bitmap is not large enough!"
 
         # Restore the k num if we need to
         self.k_num = self._read_k_num() # Read the existing knum from the file
@@ -93,7 +97,7 @@ cdef class BloomFilter:
         bytes = cls.required_bytes(capacity, probability)
         bits = bytes*8 # The bytes may round up, so get the bits again
         ideal_k = cls.ideal_k(bits, capacity)
-        ideal_k = int(round(ideal_k))
+        ideal_k = int(math.ceil(ideal_k))
         return bytes+cls.extra_buffer(), ideal_k
 
     @classmethod
