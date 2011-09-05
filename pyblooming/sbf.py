@@ -13,7 +13,7 @@ except ImportError:
     from bloom import BloomFilter
 
 class ScalingBloomFilter(object):
-    def __init__(self, filters=None, filenames=None, length=16777216, prob=1E-6, k=4, scale_size=4, prob_reduction=0.9):
+    def __init__(self, filters=None, filenames=None, initial_capacity=1e6, prob=1e-4, scale_size=4, prob_reduction=0.9):
         """
         Creates a new ScalingBloomFilter that tries to enforce
         a given false positive probability by creating new Bloom Filters
@@ -24,18 +24,16 @@ class ScalingBloomFilter(object):
             - filenames (optional) : A callable that generates file names
               for generating new persisteed BloomFilters. Without this,
               anonymous bitmaps will be used.
-            - length (optional) : Length of initial filter.
+            - initial_capacity (optional) : Initial capacity.
             - prob (optional) : The false positive rate to enforce.
-            - k (optional) : The number of hash functions to start with.
             - scale_size (optional) : The file size growth rate. Defaults to 4.
             - prob_reduction (optional) : The probability reduction with
-              eahc new filter. Defaults to 0.9.
+              each new filter. Defaults to 0.9.
         """
-        if not callable(filenames): raise ValueError, "Filenames must be callable!"
+        if filenames is not None and not callable(filenames): raise ValueError, "Filenames must be callable!"
         self.filenames = filenames
         self.prob = prob
-        self.init_length = length
-        self.init_k = k
+        self.init_capacity = initial_capacity
         self.scale_size = scale_size
         self.prob_reduction = prob_reduction
         self.filters = filters if filters else []
@@ -46,20 +44,22 @@ class ScalingBloomFilter(object):
         "Initializes the probability and capacity of existing filters"
         prob = self.prob
         for filt in self.filters:
-            size = len(filt.bitmap)
+            size = len(filt.bitmap) - 8*filt.extra_buffer()
             filt.info["prob"] = prob
             filt.info["capacity"] = BloomFilter.expected_capacity(size, prob)
             prob *= self.prob_reduction
 
     def _create_filter(self):
         "Creates a new filter"
-        # Get the size of the filter and k val
-        length = self.init_length
-        new_k = self.init_k
-        prob = self.prob
+        # Get the initial parameters
+        capacity, prob = self.init_capacity, self.prob
+
+        # Update our parameters if we have filters
         if len(self.filters) > 0:
-            length = len(self.filters[-1].bitmap)/8 * self.scale_size
-            new_k = self.filters[-1].k_num + 1
+            # Grow by the scale size
+            capacity = self.filters[-1].info["capacity"] * self.scale_size
+
+            # Reduce the probability by the probability reduction
             prob = self.filters[-1].info["prob"] * self.prob_reduction
 
         # Get the filename
@@ -67,13 +67,16 @@ class ScalingBloomFilter(object):
         if self.filenames:
             filename = self.filenames()
 
+        # Compute the new size and K
+        length, k = BloomFilter.params_for_capacity(capacity, prob)
+
         # Create a new bitmap
         bitmap = bitmaplib.Bitmap(length, filename)
-        filter = BloomFilter(bitmap, k=new_k)
+        filter = BloomFilter(bitmap, k)
 
         # Add the new properties
         filter.info["prob"] = prob
-        filter.info["capacity"] = BloomFilter.expected_capacity(len(bitmap),prob)
+        filter.info["capacity"] = capacity
         return filter
 
     def add(self, key, check_first=False):
