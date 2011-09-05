@@ -89,7 +89,7 @@ cdef class BloomFilter:
         bytes = cls.required_bytes(capacity, probability)
         bits = bytes*8 # The bytes may round up, so get the bits again
         ideal_k = cls.ideal_k(bits, capacity)
-        ideal_k = int(math.ceil(ideal_k))
+        ideal_k = int(round(ideal_k))
         return bytes+cls.extra_buffer(), ideal_k
 
     @classmethod
