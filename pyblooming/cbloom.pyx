@@ -24,6 +24,7 @@ cdef class BloomFilter:
     cdef size_t bitmap_size
     cdef size_t count
     cdef size_t* hashes
+    cdef readonly size_t offset
 
     def __cinit__(self, bitmap, k):
         """
@@ -51,6 +52,9 @@ cdef class BloomFilter:
         # Multiply by 4 to have the correct number of hashes
         # Multiply by the size of size_t for each hash
         self.hashes = <size_t*>stdlib.malloc((((k/4)+2)*4)*sizeof(size_t))
+
+        # Compute the offset size
+        self.offset = self.bitmap_size / self.k_num
 
         # Restore the count
         self.count = self._read_count() # Read the count from the file
@@ -202,14 +206,16 @@ cdef class BloomFilter:
         else:
             self._compute_hashes(key)
 
-        cdef size_t m = self.bitmap_size
+        cdef size_t m = self.offset
+        cdef size_t offset = 0
         cdef size_t h
         cdef int i
 
         # Set the bits for the hashes
         for i from 0 <= i < self.k_num:
             h = self.hashes[i]
-            self.bitmap[h % m] = 1
+            self.bitmap[offset + (h % m)] = 1
+            offset += m
 
         self.count += 1
         return True
@@ -219,13 +225,15 @@ cdef class BloomFilter:
     def __contains__(self, char* key):
         "Checks if the set contains a given key"
         self._compute_hashes(key)
-        cdef size_t m = self.bitmap_size
+        cdef size_t m = self.offset
+        cdef size_t offset = 0
         cdef size_t h
         cdef int i
     
         for i from 0 <= i < self.k_num:
             h = self.hashes[i]
-            if self.bitmap[h % m] == 0: return False
+            if self.bitmap[offset+ (h % m)] == 0: return False
+            offset += m
         return True
 
     def __len__(self):

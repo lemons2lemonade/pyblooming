@@ -41,6 +41,9 @@ class BloomFilter(object):
             self.k_num = k
             self._write_k_num()
 
+        # Compute the offset size
+        self.offset = int(self.bitmap_size / self.k_num)
+
         # Restore the count
         self.count = self._read_count() # Read the count from the file
         self.info = {} # Allows dynamic properties
@@ -155,21 +158,27 @@ class BloomFilter(object):
         "Add a key to the set"
         if check_first and key in self: return False
         hashes = self._get_hashes(key, self.k_num)
-        m = self.bitmap_size
+        m = self.offset
+        offset = 0
 
         # Set the bits for the hashes
         for h in hashes:
-            self.bitmap[h % m] = 1
-        self.count += 1
+            self.bitmap[offset + (h % m)] = 1
+            offset += m
 
+        self.count += 1
         return True
 
     def __contains__(self, key):
         "Checks if the set contains a given key"
         hashes = self._get_hashes(key, self.k_num)
-        m = self.bitmap_size
+        m = self.offset
+        offset = 0
+
         for h in hashes:
-            if self.bitmap[h % m] == 0: return False
+            if self.bitmap[offset + (h % m)] == 0: return False
+            offset += m
+
         return True
 
     def __len__(self):
