@@ -19,7 +19,7 @@ char* mmap_file(int filedes, size_t len) {
         fd = -1;
     } else {
         flags |= MAP_FILE;
-        flags |= MAP_PRIVATE;
+        flags |= MAP_SHARED;
         fd = filedes;
     }
 
@@ -55,14 +55,15 @@ int mummap_file(char* addr, size_t len) {
  */
 int flush(int filedes, char* addr, size_t len) {
     // Don't bother if there is no file backing
-    if (filedes >= 0) {
-        // First flush the mmap regions syncronously
-        int res = msync(addr, len, MS_SYNC);
-        if (res == -1) return -1;
+    if (filedes == -1 ) 
+        return 0;
 
-        res = fsync(filedes);
-        if (res == -1) return -1;
-    }
+    // First flush the mmap regions syncronously
+    int res = msync(addr, len, MS_SYNC);
+    if (res == -1) return -1;
+
+    res = fsync(filedes);
+    if (res == -1) return -1;
 
     return 0;
 }
