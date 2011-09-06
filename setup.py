@@ -1,6 +1,5 @@
 from setuptools import setup
 from setuptools.extension import Extension
-from Cython.Distutils import build_ext
 import os.path
 import os
 import pyblooming
@@ -50,6 +49,5 @@ setup(name='pyblooming',
         "Programming Language :: Python",
         "Topic :: Software Development :: Libraries"
       ],
-      cmdclass = {'build_ext':build_ext},
       ext_modules = ext_modules,
     )
