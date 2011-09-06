@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <unistd.h>
+#include <stdio.h>
 #include <sys/mman.h>
 
 /**
@@ -30,8 +31,15 @@ char* mmap_file(int filedes, size_t len) {
     if (addr == MAP_FAILED) {
         perror("Failed to mmap");
         return 0;
-    } else
-        return addr;
+    }
+
+    // Fault the memory in 
+    int res = madvise(addr, len, MADV_WILLNEED);
+    if (res != 0) {
+        perror("Failed to call madvise()");
+    }
+
+    return addr;
 }
 
 /**
