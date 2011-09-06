@@ -19,17 +19,18 @@ char* mmap_file(int filedes, size_t len) {
         fd = -1;
     } else {
         flags |= MAP_FILE;
-        flags |= MAP_SHARED;
+        flags |= MAP_PRIVATE;
         fd = filedes;
     }
 
     // Perform the map in
-    char* addr = mmap(0, len, PROT_READ|PROT_WRITE, flags, fd, 0);
+    char* addr = mmap(NULL, len, PROT_READ|PROT_WRITE, flags, fd, 0);
 
     // Check for an error, otherwise return
-    if (addr == MAP_FAILED)
+    if (addr == MAP_FAILED) {
+        perror("Failed to mmap");
         return 0;
-    else
+    } else
         return addr;
 }
 
