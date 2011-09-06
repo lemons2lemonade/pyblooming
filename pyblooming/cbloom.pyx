@@ -51,11 +51,7 @@ cdef class BloomFilter:
             self._write_k_num()
     
         # Store a buffer for our hashes
-        # k/4 is the number of hashing rounds,
-        # We add 2 to the number of rounds (to prevent random segfaults...)
-        # Multiply by 4 to have the correct number of hashes
-        # Multiply by the size of size_t for each hash
-        self.hashes = <size_t*>stdlib.malloc((((k/4)+2)*4)*sizeof(size_t))
+        self.hashes = <size_t*>stdlib.malloc(self.k_num*8*sizeof(size_t))
 
         # Compute the offset size
         self.offset = self.bitmap_size / self.k_num
