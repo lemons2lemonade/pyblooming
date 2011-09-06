@@ -46,7 +46,7 @@ class ScalingBloomFilter(object):
         for filt in self.filters:
             size = len(filt.bitmap) - 8*filt.extra_buffer()
             filt.info["prob"] = prob
-            filt.info["capacity"] = BloomFilter.expected_capacity(size, prob)
+            filt.info["capacity"] = int(BloomFilter.expected_capacity(size, prob))
             prob *= self.prob_reduction
 
     def _create_filter(self):
