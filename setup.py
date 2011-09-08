@@ -10,21 +10,18 @@ try:
 except:
     readme_content = ""
 
-# Get the current dir
-current_path = os.path.dirname(os.path.abspath(__file__))
-
 ext_modules = [
         Extension("pyblooming.cbitmap",
             extra_compile_args=['-std=gnu99', '-O2'],
-            sources = ["pyblooming/cbitmap.pyx","pyblooming/cbitmaputil.c"],
-            include_dirs = [os.path.join(current_path, 'pyblooming')],
-            library_dirs = [os.path.join(current_path, 'pyblooming')],
+            sources = ["pyblooming/cbitmap.pyx", "pyblooming/cbitmaputil.c"],
+            include_dirs = ["pyblooming"],
+            library_dirs = ["pyblooming"]
             ),
         Extension("pyblooming.cbloom",
             extra_compile_args=['-std=gnu99', '-O2'],
             sources = ["pyblooming/cbloom.pyx"],
-            include_dirs = [os.path.join(current_path, 'pyblooming')],
-            library_dirs = [os.path.join(current_path, 'pyblooming')],
+            include_dirs = ["pyblooming"],
+            library_dirs = ["pyblooming"]
             ),
       ]
 
