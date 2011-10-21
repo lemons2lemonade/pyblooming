@@ -1,11 +1,7 @@
 PyBlooming
 =========
 
-PyBlooming is a library that encompasses provides three primary features::
-
-* Bitmaps
-* Classic Bloom Filters
-* Scaling Bloom Filters
+PyBlooming is a library that encompasses provides three primary features: Bitmaps, classic bloom filters, and scaling bloom filters.
 
 Bitmap support
 -------------
@@ -50,7 +46,6 @@ Download and install from source::
 Examples
 ------
 
-Using pybloom is very simple, and is similar to using native sets::
 Creating and using a bitmap is very simple::
 
     # Importing from pyblooming will automatically
