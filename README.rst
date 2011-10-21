@@ -2,6 +2,7 @@ PyBlooming
 =========
 
 PyBlooming is a library that encompasses provides three primary features::
+
 * Bitmaps
 * Classic Bloom Filters
 * Scaling Bloom Filters
