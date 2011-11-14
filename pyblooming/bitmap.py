@@ -64,8 +64,9 @@ class Bitmap(object):
         self.mmap[byte] = chr(byte_val)
         return val
 
-    def flush(self):
+    def flush(self, async=False):
         "Flushes the contents of the Bitmap to disk."
+        if async: raise NotImplementedError, "Python Bitmap implementation does not support async flushing!"
         if self.mmap: self.mmap.flush()
         if self.fileobj: self.fileobj.flush()
 
