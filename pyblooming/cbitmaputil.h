@@ -29,4 +29,13 @@ int mummap_file(char* addr, size_t len);
  */
 int flush(int filedes, char* addr, size_t len);
 
+/**
+ * Helper to flush memory mapped files asyncronously
+ * @arg filedes The file descriptor under the mmap file, -1 for anonymous
+ * @arg addr The address of the memory mapped region
+ * @arg len The length of bytes of the mmap region
+ * @returns -1 on error, 0 on success
+ */
+int async_flush(int filedes, char* addr, size_t len);
+
 #endif
