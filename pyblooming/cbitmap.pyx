@@ -79,11 +79,11 @@ cdef class Bitmap:
         if self.mmap:
             if async:
                 if async_flush(self.fileno, <char*>self.mmap, self.size) == -1:
-                    raise oserror, "failed to flush the buffers!"
+                    raise OSError, "Failed to flush the buffers!"
             else:
                 if flush(self.fileno, <char*>self.mmap, self.size) == -1:
-                    raise oserror, "failed to flush the buffers!"
-        if self.fileobj and not async:
+                    raise OSError, "Failed to flush the buffers!"
+        if self.fileobj and not async: 
             self.fileobj.flush()
 
     def close(self):
