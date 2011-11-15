@@ -13,4 +13,4 @@ except ImportError:
 from sbf import ScalingBloomFilter
 
 __all__ = ["Bitmap", "BloomFilter", "ScalingBloomFilter"]
-__version__ = "0.1.0"
+__version__ = "0.2.0"
