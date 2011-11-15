@@ -1,6 +1,7 @@
 """
 Contains tests for the main bloom filter class.
 """
+import time
 import os
 import pytest
 import hashlib
@@ -204,6 +205,26 @@ class TestBloomFilter(object):
 
         # Make a new bitmap
         bitmap2 = Bitmap(1024, "testpyflush.mmap")
+        bf1 = pyBloom(bitmap2, 20)
+        assert bf1.k_num == 2 # Should restore
+        assert len(bf1) == 1000
+        assert all([bf1.__contains__("test%d" % x) for x in xrange(1000)])
+
+        bf1.close()
+        bf.close()
+
+    def test_async_flush(self):
+        """
+        Tests that a flushes flushes the contents
+        """
+        bitmap = Bitmap(1024, "testpyasyncflush.mmap")
+        bf = pyBloom(bitmap, 2)
+        [bf.add("test%d" % x) for x in xrange(1000)]
+        bf.flush(True)
+        time.sleep(1)
+
+        # Make a new bitmap
+        bitmap2 = Bitmap(1024, "testpyasyncflush.mmap")
         bf1 = pyBloom(bitmap2, 20)
         assert bf1.k_num == 2 # Should restore
         assert len(bf1) == 1000
@@ -438,13 +459,33 @@ class TestCBloomFilter(object):
         """
         Tests that a flushes flushes the contents
         """
-        bitmap = Bitmap(1024, "testpyflush.mmap")
+        bitmap = Bitmap(1024, "testcflush.mmap")
         bf = cBloom(bitmap, 2)
         [bf.add("test%d" % x) for x in xrange(1000)]
         bf.flush()
 
         # Make a new bitmap
-        bitmap2 = Bitmap(1024, "testpyflush.mmap")
+        bitmap2 = Bitmap(1024, "testcflush.mmap")
+        bf1 = cBloom(bitmap2, 20)
+        assert bf1.k_num == 2 # Should restore
+        assert len(bf1) == 1000
+        assert all([bf1.__contains__("test%d" % x) for x in xrange(1000)])
+
+        bf1.close()
+        bf.close()
+
+    def test_async_flush(self):
+        """
+        Tests that a flushes flushes the contents
+        """
+        bitmap = Bitmap(1024, "testcasyncflush.mmap")
+        bf = cBloom(bitmap, 2)
+        [bf.add("test%d" % x) for x in xrange(1000)]
+        bf.flush(True)
+        time.sleep(1)
+
+        # Make a new bitmap
+        bitmap2 = Bitmap(1024, "testcasyncflush.mmap")
         bf1 = cBloom(bitmap2, 20)
         assert bf1.k_num == 2 # Should restore
         assert len(bf1) == 1000
@@ -457,13 +498,13 @@ class TestCBloomFilter(object):
         """
         Tests that a close does flush
         """
-        bitmap = Bitmap(1024, "testpycloseflush.mmap")
+        bitmap = Bitmap(1024, "testccloseflush.mmap")
         bf = cBloom(bitmap, 2)
         [bf.add("test%d" % x) for x in xrange(1000)]
         bf.close()
 
         # Make a new bitmap
-        bitmap = Bitmap(1024, "testpycloseflush.mmap")
+        bitmap = Bitmap(1024, "testccloseflush.mmap")
         bf = cBloom(bitmap, 20)
         assert bf.k_num == 2 # Should restore
         assert len(bf) == 1000

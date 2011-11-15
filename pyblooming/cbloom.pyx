@@ -240,7 +240,7 @@ cdef class BloomFilter:
         "Returns the number of elements in the bitmap"
         return self.count
 
-    def flush(self):
+    def flush(self, async=False):
         """
         Forces us to write out the current count to the bitmap,
         and flushes the underlying bitmap.
@@ -253,7 +253,7 @@ cdef class BloomFilter:
         if self.bitmap: self.bitmap[size_offset:size_offset+self.SIZE_LEN] = count_str
 
         # Flush the underlying bitmap
-        if self.bitmap: self.bitmap.flush()
+        if self.bitmap: self.bitmap.flush(async)
 
     def close(self):
         "Closes the bloom filter and the underlying bitmap"
