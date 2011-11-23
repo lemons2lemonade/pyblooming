@@ -141,39 +141,6 @@ class TestBloomFilter(object):
         s.close()
         s1.close()
 
-    def test_async_flush(self):
-        """
-        Tests that an async flushes flushes the contents
-        """
-        data = {"counter": 0, "files":[]}
-        def getname():
-            name = "test.asyncflush.%03d.mmap" % data["counter"]
-            data["files"].append(name)
-            data["counter"] += 1
-            return name
-
-        s = ScalingBloomFilter(filenames=getname,initial_capacity=1e3, prob=1e-4, scale_size=4)
-        [s.add("test%d" % x,True) for x in xrange(10000)]
-        s.flush(True)
-        time.sleep(1)
-
-        # Create the bloom filters
-        bitmaps = [Bitmap(os.path.getsize(f), f) for f in data["files"]]
-        filters = [BloomFilter(b,1) for b in bitmaps]
-        s1 = ScalingBloomFilter(filters=filters,filenames=getname,initial_capacity=1e3, prob=1e-4, scale_size=4)
-
-        # Compare shit
-        assert len(s) == len(s1)
-        assert len(s.filters) == len(s1.filters)
-        assert all([s1.__contains__("test%d" % x) for x in xrange(10000)])
-        assert s.total_capacity() == s1.total_capacity()
-        assert s.total_bitmap_size() == s1.total_bitmap_size()
-
-        # Close up
-        s.close()
-        s1.close()
-
-
     def test_close_does_flush(self):
         """
         Tests that a close does flush

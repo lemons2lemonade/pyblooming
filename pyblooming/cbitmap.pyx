@@ -6,7 +6,6 @@ cdef extern from "cbitmaputil.h" nogil:
     cdef char* mmap_file(int filedes, size_t len)
     cdef int mummap_file(char* addr, size_t len)
     cdef int flush(int filedes, char* addr, size_t len)
-    cdef int async_flush(int filedes, char* addr, size_t len)
 
 cdef class Bitmap:
     cdef object fileobj
@@ -74,16 +73,12 @@ cdef class Bitmap:
         else:
             self.mmap[idx >> 3] = self.mmap[idx >> 3] & ~(1 << (7 - idx % 8))
 
-    def flush(self, async=False):
+    def flush(self):
         "Flushes the contents of the Bitmap to disk."
         if self.mmap:
-            if async:
-                if async_flush(self.fileno, <char*>self.mmap, self.size) == -1:
-                    raise OSError, "Failed to flush the buffers!"
-            else:
-                if flush(self.fileno, <char*>self.mmap, self.size) == -1:
-                    raise OSError, "Failed to flush the buffers!"
-        if self.fileobj and not async: 
+            if flush(self.fileno, <char*>self.mmap, self.size) == -1:
+                raise OSError, "Failed to flush the buffers!"
+        if self.fileobj: 
             self.fileobj.flush()
 
     def close(self):

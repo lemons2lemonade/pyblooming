@@ -76,21 +76,3 @@ int flush(int filedes, char* addr, size_t len) {
     return 0;
 }
 
-/**
- * Helper to flush memory mapped files asyncronously
- * @arg filedes The file descriptor under the mmap file, -1 for anonymous
- * @arg addr The address of the memory mapped region
- * @arg len The length of bytes of the mmap region
- * @returns -1 on error, 0 on success
- */
-int async_flush(int filedes, char* addr, size_t len) {
-    // Don't bother if there is no file backing
-    if (filedes == -1 ) 
-        return 0;
-
-    // Flush the mmap regions asyncronously
-    int res = msync(addr, len, MS_ASYNC);
-    if (res == -1) return -1;
-    return 0;
-}
-

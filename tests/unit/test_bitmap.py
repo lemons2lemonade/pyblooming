@@ -92,14 +92,6 @@ class TestBitmap(object):
         bitmap.close()
         bitmap1.close()
 
-    def test_async_flush_notimpl(self):
-        """
-        Tests that async flushes are not implemented
-        """
-        with pytest.raises(NotImplementedError):
-            bitmap = pyBitmap(16, "testflush.mmap")
-            bitmap.flush(True)
-
     def test_close_does_flush(self):
         """
         Tests that a close does flush
@@ -201,22 +193,6 @@ class TestCBitmap(object):
         bitmap.flush()
 
         bitmap1 = cBitmap(16, "testcflush.mmap")
-        for bit in xrange(16*8):
-            assert bitmap1[bit] == 1
-
-        bitmap.close()
-        bitmap1.close()
-
-    def test_async_flush(self):
-        """
-        Tests that an async flushes flushes the contents
-        """
-        bitmap = cBitmap(16, "testcasyncflush.mmap")
-        for bit in xrange(16*8):
-            bitmap[bit] = 1
-        bitmap.flush(True)
-
-        bitmap1 = cBitmap(16, "testcasyncflush.mmap")
         for bit in xrange(16*8):
             assert bitmap1[bit] == 1
 

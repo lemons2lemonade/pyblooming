@@ -103,10 +103,10 @@ class ScalingBloomFilter(object):
         "Returns the number of elements in the bitmap"
         return sum(len(filt) for filt in self.filters)
 
-    def flush(self, async=False):
+    def flush(self):
         "Flushes all the underlying Bloom filters"
         for filt in self.filters:
-            filt.flush(async)
+            filt.flush()
 
     def close(self):
         "Clses all the underlying bloom filters"
