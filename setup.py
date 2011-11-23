@@ -13,7 +13,7 @@ except:
 ext_modules = [
         Extension("pyblooming.cbitmap",
             extra_compile_args=['-std=gnu99', '-O2'],
-            sources = ["pyblooming/cbitmap.pyx", "pyblooming/cbitmaputil.c","pyblooming/cbitmaputil.h"],
+            sources = ["pyblooming/cbitmap.pyx", "pyblooming/cbitmaputil.c"],
             include_dirs = ["pyblooming"],
             library_dirs = ["pyblooming"]
             ),
@@ -38,6 +38,7 @@ setup(name='pyblooming',
       license="MIT License",
       keywords=["bloom", "filter", "mmap"],
       packages=['pyblooming'],
+      package_data={"pyblooming":["cbitmaputil.h"]},
       classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
