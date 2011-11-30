@@ -1,0 +1,16 @@
+# 0.3.0
+
+ * Removed support for async flush due to portability and effectiveness reasons
+ * SHA: 268def92956017e3da1d4c1854a84bdf47ca3570
+
+# 0.2.0
+
+ * Remove support for `size_only` flush
+ * Add support for async flush (Uses MS_ASYNC instead of MS_SYNC with msync)
+ * SHA: da9e8b553a94a156646840e75c12859147d3cd1d
+
+# 0.1.0
+
+ * Initial Release
+ * SHA: 0d2408e4f19fc17da7bd8193b3222c429871bda5
+
