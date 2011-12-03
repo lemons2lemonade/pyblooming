@@ -1,3 +1,8 @@
+# 0.3.1
+
+ * Release the GIL when flushing bitmaps
+ * SHA: 1af1800
+
 # 0.3.0
 
  * Removed support for async flush due to portability and effectiveness reasons
