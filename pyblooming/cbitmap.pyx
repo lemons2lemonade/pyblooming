@@ -75,8 +75,11 @@ cdef class Bitmap:
 
     def flush(self):
         "Flushes the contents of the Bitmap to disk."
+        cdef int flushres = 0
         if self.mmap:
-            if flush(self.fileno, <char*>self.mmap, self.size) == -1:
+            with nogil:
+                flushres = flush(self.fileno, <char*>self.mmap, self.size)
+            if flushres == -1:
                 raise OSError, "Failed to flush the buffers!"
         if self.fileobj: 
             self.fileobj.flush()

@@ -152,7 +152,7 @@ cdef class BloomFilter:
         if (k & 3) > 0:
             rounds += 1
         
-        for i in range(rounds):
+        for i from 0 <= i < rounds:
             # Reset the hashes
             djb_hash = 5381
             dek_hash = len(key)
