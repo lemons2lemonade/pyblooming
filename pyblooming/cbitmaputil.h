@@ -8,9 +8,10 @@
  * Helper to memory map open file descriptors.
  * @arg filedes The file descriptor to mmap in. -1 for anonymous.
  * @arg len The length of bytes to map in
+ * @arg map_private Forces the mmap to use MAP_PRIVATE
  * @returns 0 on error, or the address of the memory map
  */
-char* mmap_file(int filedes, size_t len);
+char* mmap_file(int filedes, size_t len, int map_private);
 
 /**
  * Helper to unmap memory mapped files.
