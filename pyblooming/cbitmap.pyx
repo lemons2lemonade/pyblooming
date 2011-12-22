@@ -3,7 +3,7 @@ cimport cython
 import os.path
 
 cdef extern from "cbitmaputil.h" nogil:
-    cdef char* mmap_file(int filedes, size_t len)
+    cdef char* mmap_file(int filedes, size_t len, int map_private)
     cdef int mummap_file(char* addr, size_t len)
     cdef int flush(int filedes, char* addr, size_t len)
 
@@ -13,27 +13,32 @@ cdef class Bitmap:
     cdef int fileno
     cdef unsigned char* mmap
 
-    def __cinit__(self, length, filename=None):
+    def __cinit__(self, length, filename=None, private=False):
         """
         Creates a new Bitmap object. Bitmap wraps a memory mapped
         file and allows bit-level operations to be performed.
         A bitmap can either be created on a file, or using an anonymous map.
 
         :Parameters:
-            length : The length of the Bitmap in bytes. The number of bits is 8 times this.
-            filename (optional) : Defaults to None. If this is provided, the Bitmap will be file backed.
+          - `length` : The length of the Bitmap in bytes. The number of bits is 8 times this.
+          - `filename` (optional) : Defaults to None. If this is provided, the Bitmap will be file backed.
+          - `private` (optional) : Defaults to False. If True, the bitmap
+            is mapped using MAP_PRIVATE, making a private copy-on-write
+            version of the memory mapped region. Otherwise, MAP_SHARED is used,
+            and changes are reflected to other copies of the file.
         """
         # Check the length
         if length <= 0: raise ValueError, "Length must be positive!"
         self.size = length
 
-        # Create the fileobj and mmap
         if not filename:
+            # For anonymous mmaps, always use MAP_PRIVATE
             self.fileobj = None
             self.fileno = -1
-            self.mmap = <unsigned char*>mmap_file(self.fileno, self.size)
+            self.mmap = <unsigned char*>mmap_file(self.fileno, self.size, 1)
             if self.mmap == NULL:
                 raise OSError, "Failed to create memory mapped region!"
+
         else:
             self.fileobj = open(filename, "a+")
             self.fileno = self.fileobj.fileno()
@@ -46,7 +51,8 @@ cdef class Bitmap:
                 size_diff = length - os.path.getsize(filename)
 
             # Create the memory mapped file
-            self.mmap = <unsigned char*>mmap_file(self.fileno, self.size)
+            priv = 1 if private else 0
+            self.mmap = <unsigned char*>mmap_file(self.fileno, self.size, priv)
             if self.mmap == NULL:
                 self.fileobj.close()
                 raise OSError, "Failed to memory map the file!"
@@ -84,10 +90,11 @@ cdef class Bitmap:
         if self.fileobj: 
             self.fileobj.flush()
 
-    def close(self):
-        "Closes the Bitmap, first flushing the data."
+    def close(self, flush=True):
+        "Closes the Bitmap, flushing the data if requried."
         # Safety first!
-        self.flush()
+        if flush:
+            self.flush()
 
         # Close the mmap
         if self.mmap:
