@@ -82,7 +82,8 @@ class Bitmap(object):
     def close(self, flush=True):
         "Closes the Bitmap, flushing the data if specified."
         # Safety first!
-        if flush: self.flush()
+        if flush:
+            self.flush()
 
         # Close the mmap
         if self.mmap: self.mmap.close()
