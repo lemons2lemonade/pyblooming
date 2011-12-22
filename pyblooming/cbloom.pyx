@@ -156,12 +156,12 @@ cdef class BloomFilter:
             # Reset the hashes
             djb_hash = 5381
             dek_hash = len(key)
-            if i > 0: dek_hash += sizeof(size_t)
             fnv_hash = 0
             js_hash = 1315423911
           
             # Salt if necessary
             if i > 0:
+                dek_hash += sizeof(size_t)
                 for j in range(sizeof(size_t)):
                     key_val = (salt >> (j<<3)) & 255
                     djb_hash = ((djb_hash << 5) + djb_hash) + key_val
