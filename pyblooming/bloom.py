@@ -204,11 +204,12 @@ class BloomFilter(object):
         # Flush the underlying bitmap
         if self.bitmap: self.bitmap.flush()
 
-    def close(self):
+    def close(self, flush=True):
         "Closes the bloom filter and the underlying bitmap"
         if self.bitmap:
-            self.flush()
-            self.bitmap.close()
+            if flush:
+                self.flush()
+            self.bitmap.close(flush=flush)
             self.bitmap = None
 
     def _read_count(self):

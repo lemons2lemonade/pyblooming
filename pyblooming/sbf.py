@@ -108,10 +108,10 @@ class ScalingBloomFilter(object):
         for filt in self.filters:
             filt.flush()
 
-    def close(self):
+    def close(self, flush=True):
         "Clses all the underlying bloom filters"
         for filt in self.filters:
-            filt.close()
+            filt.close(flush=flush)
 
     def total_capacity(self):
         "Returns the total capacity"
