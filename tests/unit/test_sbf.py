@@ -80,6 +80,21 @@ class TestBloomFilter(object):
         # Counter should get called 3 times
         assert data["counter"] == 3
 
+    def test_bitmap_callback(self):
+        """
+        Tests that the filter makes the callback to get bitmaps
+        """
+        data = {"counter": 0}
+        def getbitmap(length):
+            data["counter"] += 1
+            return Bitmap(length, None)
+
+        s = ScalingBloomFilter(callback=getbitmap,initial_capacity=1e3, prob=1e-4, scale_size=4)
+        [s.add("test%d" % x,True) for x in xrange(10000)]
+
+        # Counter should get called 3 times
+        assert data["counter"] == 3
+
     def test_doubleclose(self):
         """
         Tests that calling close twice is okay
