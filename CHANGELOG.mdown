@@ -1,3 +1,9 @@
+# 0.4.0
+
+ * Allow Bitmaps to specify `private` to use MAP_PRIVATE instead of MAP_SHARED
+ * Allows close() to specify `flush` to disable flushing on close
+ * Added `callback` to SBF to control bitmap creation, instead of just filename
+
 # 0.3.1
 
  * Release the GIL when flushing bitmaps
