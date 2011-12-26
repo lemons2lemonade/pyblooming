@@ -107,6 +107,37 @@ class TestBitmap(object):
             assert bitmap[bit] == 1
         bitmap.close()
 
+    def test_private_not_shared(self):
+        """
+        Tests that an open with private does not share data
+        """
+        bitmap = pyBitmap(16, "testprivateshared.mmap", private=True)
+        for bit in xrange(16*8):
+            bitmap[bit] = 1
+
+        bitmap2 = pyBitmap(16, "testprivateshared.mmap", private=True)
+        for bit in xrange(16*8):
+            assert bitmap2[bit] == 0
+
+        bitmap.close()
+        bitmap2.close()
+
+    def test_private_noop_flush(self):
+        """
+        Tests that a close/flush with private is a noop.
+        """
+        bitmap = pyBitmap(16, "testclosenoopflush.mmap", private=True)
+        for bit in xrange(16*8):
+            bitmap[bit] = 1
+        bitmap.flush()
+        bitmap.close()
+        bitmap = None
+
+        bitmap = pyBitmap(16, "testclosenoopflush.mmap", private=True)
+        for bit in xrange(16*8):
+            assert bitmap[bit] == 0
+        bitmap.close()
+
     @classmethod
     def teardown_class(cls):
         # Remove the mmap files
@@ -212,6 +243,37 @@ class TestCBitmap(object):
         bitmap = cBitmap(16, "testccloseflush.mmap")
         for bit in xrange(16*8):
             assert bitmap[bit] == 1
+        bitmap.close()
+
+    def test_private_not_shared(self):
+        """
+        Tests that an open with private does not share data
+        """
+        bitmap = cBitmap(16, "testprivateshared.mmap", private=True)
+        for bit in xrange(16*8):
+            bitmap[bit] = 1
+
+        bitmap2 = cBitmap(16, "testprivateshared.mmap", private=True)
+        for bit in xrange(16*8):
+            assert bitmap2[bit] == 0
+
+        bitmap.close()
+        bitmap2.close()
+
+    def test_private_noop_flush(self):
+        """
+        Tests that a close/flush with private is a noop.
+        """
+        bitmap = cBitmap(16, "testcclosenoopflush.mmap", private=True)
+        for bit in xrange(16*8):
+            bitmap[bit] = 1
+        bitmap.flush()
+        bitmap.close()
+        bitmap = None
+
+        bitmap = cBitmap(16, "testcclosenoopflush.mmap", private=True)
+        for bit in xrange(16*8):
+            assert bitmap[bit] == 0
         bitmap.close()
 
     @classmethod
