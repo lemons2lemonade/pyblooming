@@ -12,6 +12,7 @@ try:
 except ImportError:
     from bloom import BloomFilter
 
+
 class ScalingBloomFilter(object):
     def __init__(self, filters=None, filenames=None, callback=None, initial_capacity=1e6, prob=1e-4, scale_size=4, prob_reduction=0.9):
         """
@@ -35,9 +36,11 @@ class ScalingBloomFilter(object):
             - prob_reduction (optional) : The probability reduction with
               each new filter. Defaults to 0.9.
         """
-        if filenames is not None and not callable(filenames): raise ValueError, "Filenames must be callable!"
+        if filenames is not None and not callable(filenames):
+            raise ValueError("Filenames must be callable!")
         self.filenames = filenames
-        if callback is not None and not callable(callback): raise ValueError, "Callback must be callable!"
+        if callback is not None and not callable(callback):
+            raise ValueError("Callback must be callable!")
         self.callback = callback or self._callback
         self.prob = prob
         self.init_capacity = initial_capacity
@@ -45,13 +48,18 @@ class ScalingBloomFilter(object):
         self.prob_reduction = prob_reduction
         self.filters = filters if filters else []
         self._initialize()
-        if len(self.filters) == 0: self.filters.append(self._create_filter())
+        if len(self.filters) == 0:
+            self.filters.append(self._create_filter())
 
     def _initialize(self):
         "Initializes the probability and capacity of existing filters"
-        prob = self.prob
+        # Bound the ultimate probability by adjusting for the initial
+        # From "Scalable Bloom Filters", Almeida 2007
+        # We use : P <= P0 * (1 / (1 - r))
+        prob = (1 - self.prob_reduction) * self.prob
+
         for filt in self.filters:
-            size = len(filt.bitmap) - 8*filt.extra_buffer()
+            size = len(filt.bitmap) - 8 * filt.extra_buffer()
             filt.info["prob"] = prob
             filt.info["capacity"] = int(BloomFilter.expected_capacity(size, prob))
             prob *= self.prob_reduction
@@ -75,6 +83,11 @@ class ScalingBloomFilter(object):
         "Creates a new filter"
         # Get the initial parameters
         capacity, prob = self.init_capacity, self.prob
+
+        # Bound the ultimate probability by adjusting for the initial
+        # From "Scalable Bloom Filters", Almeida 2007
+        # We use : P <= P0 * (1 / (1 - r))
+        prob = (1 - self.prob_reduction) * prob
 
         # Update our parameters if we have filters
         if len(self.filters) > 0:
@@ -100,11 +113,12 @@ class ScalingBloomFilter(object):
 
     def add(self, key, check_first=False):
         "Add a key to the set"
-        if check_first and key in self: return False
+        if check_first and key in self:
+            return False
 
         # Check if we are over capacity, create a new filter
         filt = self.filters[-1]
-        if len(filt)+1 >= filt.info["capacity"]:
+        if len(filt) + 1 >= filt.info["capacity"]:
             filt = self._create_filter()
             self.filters.append(filt)
 
@@ -115,7 +129,8 @@ class ScalingBloomFilter(object):
         "Checks if the set contains a given key"
         # Walk over the indexes in reverse order
         for filt in self.filters[::-1]:
-            if key in filt: return True
+            if key in filt:
+                return True
         return False
 
     def __len__(self):

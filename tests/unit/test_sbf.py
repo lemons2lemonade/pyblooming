@@ -26,7 +26,7 @@ class TestBloomFilter(object):
         assert len(s) == 0
         assert len(s.filters) == 1
         assert s.total_capacity() == 1e4
-        assert s.total_bitmap_size() == bytes
+        assert s.total_bitmap_size() <= 2*bytes
 
     def test_add_filter(self):
         """
@@ -44,7 +44,7 @@ class TestBloomFilter(object):
         # static bloom filter of the same configuration
         bytes,k = BloomFilter.params_for_capacity(5e3, 1e-4)
         assert s.total_bitmap_size() > bytes
-        assert s.total_bitmap_size() <= 1.1*bytes
+        assert s.total_bitmap_size() <= 2*bytes
 
     def test_multiple_filters(self):
         """
@@ -62,7 +62,7 @@ class TestBloomFilter(object):
         # static bloom filter of the same configuration
         bytes,k = BloomFilter.params_for_capacity(21e3, 1e-4)
         assert s.total_bitmap_size() > bytes
-        assert s.total_bitmap_size() <= 1.1*bytes
+        assert s.total_bitmap_size() <= 2*bytes
 
     def test_filename_callback(self):
         """
@@ -182,6 +182,22 @@ class TestBloomFilter(object):
         assert len(s.filters) == 3
         assert all([s.__contains__("test%d" % x) for x in xrange(10000)])
         s.close()
+
+    def test_fp_prob(self):
+        """
+        Tests that the error rate remains bounded after massive growth
+        """
+        s = ScalingBloomFilter(initial_capacity=1e4, prob=0.01, scale_size=4)
+
+        num_wrong = 0
+        for x in xrange(int(1e6)):
+            res = s.add("test%d" % x, True)
+            if not res:
+                num_wrong += 1
+
+        assert len(s.filters) == 5
+        assert num_wrong < 10000
+        assert num_wrong > 1000
 
     @classmethod
     def teardown_class(cls):
