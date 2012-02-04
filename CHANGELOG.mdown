@@ -1,3 +1,8 @@
+# 0.4.1
+ 
+ * CRITICAL: Fixed Scalable Bloom filters improperly bounding the false positive
+   rate, which could case up to 10x higher error rates than expected.
+
 # 0.4.0
 
  * Allow Bitmaps to specify `private` to use MAP_PRIVATE instead of MAP_SHARED
